@@ -10,12 +10,18 @@ type AccessTokenCache = {
 
 type WechatSendResult = {
   msgid?: number;
+  msgid_str?: string;
   trace_id?: string;
   errcode?: number;
   errmsg?: string;
 };
 
 type WechatXmlMap = Record<string, string>;
+
+export type WechatSendAck = {
+  msgId: string | null;
+  traceId: string | null;
+};
 
 export class WechatPushError extends Error {
   permanent: boolean;
@@ -118,7 +124,7 @@ export async function sendWechatSubscribeMessage(params: {
   userId: number;
   title: string;
   content: string;
-}): Promise<void> {
+}): Promise<WechatSendAck> {
   ensureWechatConfigReady();
   const [openid, accessToken] = await Promise.all([
     getUserOpenId(params.userId),
@@ -158,6 +164,14 @@ export async function sendWechatSubscribeMessage(params: {
   if (sendError) {
     throw sendError;
   }
+  const msgId =
+    String(result.msgid_str || "").trim() ||
+    (Number.isFinite(Number(result.msgid || 0)) ? String(result.msgid) : "");
+  const traceId = String(result.trace_id || "").trim();
+  return {
+    msgId: msgId || null,
+    traceId: traceId || null
+  };
 }
 
 export function verifyWechatCallbackSignature(params: {
@@ -285,4 +299,41 @@ export async function persistWechatCallbackEvent(params: {
   );
   const inserted = Number(result.affectedRows || 0) > 0;
   return { inserted, eventId };
+}
+
+export async function syncNotificationTaskByCallbackMessage(params: {
+  messageXml: string;
+}): Promise<{ synced: boolean; taskId?: number }> {
+  const message = parseWechatXml(params.messageXml);
+  const providerMsgId = String(message.MsgID || message.MsgId || "").trim();
+  if (!providerMsgId) {
+    return { synced: false };
+  }
+  const callbackStatus = String(message.Status || message.Event || message.MsgType || "").trim();
+  const normalizedStatus = callbackStatus.toLowerCase();
+  const isSuccess = normalizedStatus.includes("success") || normalizedStatus === "delivered";
+  const nextTaskStatus = isSuccess ? "sent" : "failed";
+  const [result] = await pool.query<ResultSetHeader>(
+    `UPDATE notification_tasks
+     SET status = ?,
+         callback_status = ?,
+         callback_at = CURRENT_TIMESTAMP,
+         updated_at = CURRENT_TIMESTAMP,
+         error_message = CASE
+           WHEN ? = 'sent' THEN NULL
+           ELSE COALESCE(NULLIF(?, ''), error_message, 'wechat callback status is not success')
+         END
+     WHERE provider_msg_id = ?
+       AND status NOT IN ('dead')`,
+    [nextTaskStatus, callbackStatus || null, nextTaskStatus, callbackStatus, providerMsgId]
+  );
+  if (result.affectedRows <= 0) {
+    return { synced: false };
+  }
+  const [rows] = await pool.query<RowDataPacket[]>(
+    "SELECT id FROM notification_tasks WHERE provider_msg_id = ? ORDER BY id DESC LIMIT 1",
+    [providerMsgId]
+  );
+  const taskId = rows[0] ? Number(rows[0].id) : undefined;
+  return { synced: true, taskId };
 }

@@ -143,7 +143,10 @@
   - `status`：可选，`pending` / `processing` / `sent` / `failed` / `dead`
   - `limit`：可选，默认 50，最大 200
 - 说明：查询当前用户通知任务（用于联调验证离线推送任务入库与重试状态）。
-- 返回字段补充：`retry_count`、`max_retries` 可用于观察重试次数与死信阈值。
+- 返回字段补充：
+  - `retry_count`、`max_retries`：观察重试次数与死信阈值。
+  - `provider_msg_id`、`provider_trace_id`：微信推送通道返回标识。
+  - `callback_status`、`callback_at`：微信回调同步状态与时间。
 
 ### `PATCH /notifications/tasks/{id}`
 - 鉴权：用户鉴权
@@ -186,7 +189,9 @@
   "message": "success",
   "data": {
     "eventId": "sha1_event_id",
-    "inserted": true
+    "inserted": true,
+    "taskSynced": true,
+    "taskId": 123
   }
 }
 ```

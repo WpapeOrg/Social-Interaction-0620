@@ -12,6 +12,7 @@ import {
   decryptWechatCallbackEncryptedText,
   parseWechatXml,
   persistWechatCallbackEvent,
+  syncNotificationTaskByCallbackMessage,
   verifyWechatCallbackSignature,
   verifyWechatMessageSignature,
   WechatPushError
@@ -216,9 +217,15 @@ router.post("/wechat/push/callback", wrap(async (req, res) => {
 
   try {
     const result = await persistWechatCallbackEvent({ messageXml });
+    const syncResult = await syncNotificationTaskByCallbackMessage({ messageXml });
     res.json({
       message: "success",
-      data: { eventId: result.eventId, inserted: result.inserted }
+      data: {
+        eventId: result.eventId,
+        inserted: result.inserted,
+        taskSynced: syncResult.synced,
+        taskId: syncResult.taskId || null
+      }
     });
   } catch (error) {
     if (error instanceof WechatPushError) {
@@ -300,7 +307,8 @@ router.get("/notifications/tasks", requireAuth, requireActiveUser, wrap(async (r
 
   const [rows] = await pool.query<RowDataPacket[]>(
     `SELECT id, user_id, conversation_id, message_id, task_type, channel, title, content,
-            status, retry_count, max_retries, error_message, scheduled_at, sent_at, created_at, updated_at
+            status, retry_count, max_retries, provider_msg_id, provider_trace_id,
+            callback_status, callback_at, error_message, scheduled_at, sent_at, created_at, updated_at
      FROM notification_tasks
      WHERE user_id = ?
        AND (? = 0 OR status = ?)

@@ -22,6 +22,7 @@ Create small, auditable branches and commits that map one-to-one to requirements
 
 - Use `feature/<scope>` naming for requirement branches.
 - Keep one requirement per branch; do not mix docs/UI/API in the same commit unless explicitly requested.
+- If a new request is a direct iteration of an existing requirement, continue on the original branch instead of creating a new branch.
 - Keep integration branch merge commits explicit (`--no-ff`) when traceability matters.
 
 ## Commit Rules

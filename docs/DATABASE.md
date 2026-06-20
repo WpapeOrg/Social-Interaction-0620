@@ -17,6 +17,7 @@ mysql -h 127.0.0.1 -P 3306 -u social_user -psocial_pass social_interaction < sql
 mysql -h 127.0.0.1 -P 3306 -u social_user -psocial_pass social_interaction < sql/realtime_migration_004.sql
 mysql -h 127.0.0.1 -P 3306 -u social_user -psocial_pass social_interaction < sql/realtime_migration_005.sql
 mysql -h 127.0.0.1 -P 3306 -u social_user -psocial_pass social_interaction < sql/realtime_migration_006.sql
+mysql -h 127.0.0.1 -P 3306 -u social_user -psocial_pass social_interaction < sql/realtime_migration_007.sql
 ```
 
 ## 3. 核心表
@@ -41,7 +42,7 @@ mysql -h 127.0.0.1 -P 3306 -u social_user -psocial_pass social_interaction < sql
 - `notification_preferences`
   - 用户通知配置总开关、私聊提醒开关、匹配提醒开关。
 - `notification_tasks`
-  - 离线通知任务队列，记录任务状态（`pending/processing/sent/failed/dead`）、重试计数与错误信息。
+  - 离线通知任务队列，记录任务状态（`pending/processing/sent/failed/dead`）、重试计数、通道消息 ID、回调状态与错误信息。
 - `notification_callback_events`
   - 微信推送回调事件幂等入库表，按 `event_id` 去重。
 
@@ -64,6 +65,8 @@ mysql -h 127.0.0.1 -P 3306 -u social_user -psocial_pass social_interaction < sql
   - 为通知任务表补齐 `retry_count`、`max_retries`，用于指数退避重试与死信判定。
 - `backend/sql/realtime_migration_006.sql`
   - 新增微信回调事件表 `notification_callback_events`，用于回调消息幂等落库。
+- `backend/sql/realtime_migration_007.sql`
+  - 为通知任务表补齐 `provider_msg_id`、`provider_trace_id`、`callback_status`、`callback_at`，用于回调状态精确回写。
 
 ## 5. 运维建议（MVP 阶段）
 - 每次变更库结构时新增独立迁移文件，避免修改历史迁移。

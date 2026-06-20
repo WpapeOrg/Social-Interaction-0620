@@ -1,0 +1,5 @@
+ALTER TABLE notification_tasks
+  ADD COLUMN IF NOT EXISTS provider_msg_id VARCHAR(64) NULL,
+  ADD COLUMN IF NOT EXISTS provider_trace_id VARCHAR(64) NULL,
+  ADD COLUMN IF NOT EXISTS callback_status VARCHAR(64) NULL,
+  ADD COLUMN IF NOT EXISTS callback_at TIMESTAMP NULL;
