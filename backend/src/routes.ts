@@ -273,7 +273,7 @@ router.post("/conversations/:id/messages", requireAuth, requireActiveUser, wrap(
     [result.insertId]
   );
   if (messageRows[0]) {
-    await emitConversationMessage(conversationId, messageRows[0], req.authUserId || undefined);
+    await emitConversationMessage(conversationId, messageRows[0]);
   }
 
   res.json({ data: messageRows[0] || { id: result.insertId } });
