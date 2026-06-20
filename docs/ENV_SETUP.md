@@ -1,45 +1,28 @@
-# 环境搭建说明（MVP）
+# 环境搭建
 
-## 1. 依赖版本
+本文档用于快速拉起本地开发环境（Docker + 后端 API + 小程序导入）。
+
+## 1. 前置依赖
 - Node.js >= 20
 - npm >= 10
 - Docker Desktop >= 4.x
-- 微信开发者工具（最新版）
+- 微信开发者工具
 
-## 2. 启动基础服务（MySQL + Redis）
-在项目根目录执行：
+## 2. 启动基础服务
+
+项目根目录执行：
 
 ```bash
 docker compose up -d
-```
-
-检查服务状态：
-
-```bash
 docker compose ps
 ```
 
-如果本机没有 Docker，可手动准备本地 MySQL 8 和 Redis 7，并按 `backend/.env.example` 配置连接。
-
-## 3. 启动后端 API
-进入后端目录并安装依赖：
+## 3. 启动后端服务
 
 ```bash
 cd backend
 npm install
 cp .env.example .env
-```
-
-初始化数据库表：
-
-```bash
-mysql -h 127.0.0.1 -P 3306 -u social_user -psocial_pass social_interaction < sql/init.sql
-mysql -h 127.0.0.1 -P 3306 -u social_user -psocial_pass social_interaction < sql/admin_migration_001.sql
-```
-
-启动开发服务：
-
-```bash
 npm run dev
 ```
 
@@ -49,31 +32,22 @@ npm run dev
 curl http://localhost:3000/health
 ```
 
-## 3.1 管理后台（举报处理）联调
-- 后端管理接口鉴权 Header：`x-admin-key`
-- 默认值（未配置时）：`dev_admin_key`
-- 推荐在 `backend/.env` 设置：
+## 4. 初始化数据库
 
-```bash
-ADMIN_API_KEY=replace_with_admin_key
-```
+数据库初始化与迁移请按 [数据库说明](DATABASE.md) 执行。
 
-可直接打开管理页：
-- `admin-panel/index.html`
-- 填写 `API Base` 和 `Admin Key` 后，可进行举报处理、用户封禁/解封
+## 5. 管理后台联调
 
-## 4. 小程序端建议目录（手动创建）
-当前仓库已提供 `miniprogram/` 初始骨架，可直接在微信开发者工具导入该目录。
+管理页说明请见 [管理后台使用说明](ADMIN_PANEL.md)。
 
-建议最小页面结构：
-- pages/login
-- pages/profile/edit
-- pages/recommend/list
-- pages/chat/list
-- pages/chat/detail
-- pages/me/index
+## 6. 小程序导入
+- 小程序目录：`miniprogram/`
+- 在微信开发者工具中导入该目录即可。
 
-## 5. 推荐后续步骤
-- 接入 ORM（Prisma/TypeORM）并创建库表迁移。
-- 落地 `PRD_v1.md` 中的 API 清单。
-- 增加基础测试（鉴权、匹配、消息接口）。
+页面列表：
+- `pages/login`
+- `pages/profile/edit`
+- `pages/recommend/list`
+- `pages/chat/list`
+- `pages/chat/detail`
+- `pages/me/index`

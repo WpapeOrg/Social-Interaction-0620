@@ -1,13 +1,17 @@
 # Social-Interaction-0620
 
-扩列社交小程序 MVP 项目骨架。
+扩列社交小程序 MVP 项目，包含小程序端、后端 API、举报处理后台页面。
 
-## 文档
-- `docs/PRD_v1.md`：MVP 需求清单、任务拆解、两周冲刺排期
-- `docs/ENV_SETUP.md`：环境搭建步骤
-- `docs/DESIGN_SYSTEM_V1.md`：设计系统规范（token、组件、动效）
-- `backend/sql/init.sql`：MySQL 初始化脚本
-- `backend/sql/admin_migration_001.sql`：管理后台字段迁移脚本
+## 当前已实现功能
+- 用户登录：`/auth/wx-login` 微信 code 登录（开发阶段 mock code）。
+- 用户资料：查询与更新个人资料、兴趣标签。
+- 推荐与匹配：推荐列表、喜欢/跳过、互赞成匹配。
+- 聊天：会话列表、消息查询与发送（文本）。
+- 安全能力：举报、拉黑、解除拉黑。
+- 管理能力：举报列表、举报处理、用户封禁与解封。
+- 小程序页面：登录、资料、推荐、会话、聊天、我的。
+
+详细状态见 [功能实现清单](docs/IMPLEMENTED_FEATURES.md)。
 
 ## 快速开始
 ```bash
@@ -15,12 +19,24 @@ docker compose up -d
 cd backend
 npm install
 cp .env.example .env
-mysql -h 127.0.0.1 -P 3306 -u social_user -psocial_pass social_interaction < sql/init.sql
-mysql -h 127.0.0.1 -P 3306 -u social_user -psocial_pass social_interaction < sql/admin_migration_001.sql
 npm run dev
 ```
 
-## 目录
-- `backend/`：Node.js + TypeScript API（已含 P0 主要接口）
-- `miniprogram/`：微信小程序页面骨架，可直接导入开发者工具
-- `admin-panel/`：举报处理与用户封禁管理页（静态页面）
+数据库初始化与迁移、管理台联调见 [环境搭建文档](docs/ENV_SETUP.md)。
+
+## 项目结构
+- `backend/`：Node.js + TypeScript API 与 SQL 脚本。
+- `miniprogram/`：微信小程序页面与全局样式系统。
+- `admin-panel/`：举报处理与用户状态管理页面（静态 HTML）。
+- `docs/`：PRD、环境、API、数据库、设计系统、功能状态等文档。
+
+## 文档索引
+- [功能实现清单](docs/IMPLEMENTED_FEATURES.md)
+- [产品路线图](docs/ROADMAP.md)
+- [迭代执行计划（按周）](docs/ITERATION_PLAN.md)
+- [环境搭建](docs/ENV_SETUP.md)
+- [API 接口说明](docs/API.md)
+- [数据库说明](docs/DATABASE.md)
+- [管理后台使用说明](docs/ADMIN_PANEL.md)
+- [设计系统](docs/DESIGN_SYSTEM_V1.md)
+- [PRD v1](docs/PRD_v1.md)
