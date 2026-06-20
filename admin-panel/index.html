@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>扩列后台管理</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: "SF Pro Rounded", "PingFang SC", sans-serif;
+        background: #0a1020;
+        color: #eaf1ff;
+      }
+      .wrap {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+      .card {
+        background: rgba(17, 25, 44, 0.92);
+        border: 1px solid rgba(110, 228, 255, 0.25);
+        border-radius: 14px;
+        padding: 16px;
+        margin-bottom: 14px;
+      }
+      .row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      input,
+      select,
+      button {
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.06);
+        color: #eaf1ff;
+        padding: 8px 10px;
+      }
+      button {
+        cursor: pointer;
+      }
+      .btn-primary {
+        background: linear-gradient(90deg, #17c4ff, #3a78ff);
+        border: none;
+      }
+      .btn-danger {
+        background: linear-gradient(90deg, #ff8b48, #ff5a44);
+        border: none;
+      }
+      .muted {
+        color: #9cabca;
+      }
+      .line {
+        margin: 4px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h2>扩列后台管理</h2>
+      <div class="card">
+        <div class="row">
+          <label>API Base</label>
+          <input id="baseUrl" value="http://localhost:3000" style="width: 220px" />
+          <label>Admin Key</label>
+          <input id="adminKey" placeholder="ADMIN_API_KEY" style="width: 220px" />
+          <button class="btn-primary" onclick="loadReports()">加载举报</button>
+          <button onclick="loadUsers()">加载用户</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>举报处理</h3>
+        <div class="row">
+          <label>状态</label>
+          <select id="reportStatus">
+            <option value="pending">pending</option>
+            <option value="processed">processed</option>
+            <option value="rejected">rejected</option>
+          </select>
+          <button onclick="loadReports()">刷新</button>
+        </div>
+        <div id="reportList" class="muted">暂无数据</div>
+      </div>
+
+      <div class="card">
+        <h3>用户管理</h3>
+        <div class="row">
+          <input id="userKeyword" placeholder="昵称或城市搜索" />
+          <button onclick="loadUsers()">搜索</button>
+        </div>
+        <div id="userList" class="muted">暂无数据</div>
+      </div>
+    </div>
+
+    <script>
+      function headers() {
+        return {
+          "Content-Type": "application/json",
+          "x-admin-key": document.getElementById("adminKey").value.trim()
+        };
+      }
+
+      function base() {
+        return document.getElementById("baseUrl").value.trim();
+      }
+
+      async function loadReports() {
+        const status = document.getElementById("reportStatus").value;
+        const res = await fetch(`${base()}/admin/reports?status=${status}`, { headers: headers() });
+        const data = await res.json();
+        const list = document.getElementById("reportList");
+        if (!Array.isArray(data.data) || data.data.length === 0) {
+          list.innerHTML = "<div class='muted'>暂无举报</div>";
+          return;
+        }
+        list.innerHTML = data.data
+          .map(
+            (item) => `
+            <div class="card">
+              <div class="line">#${item.id} | 状态: ${item.status} | 举报人: ${item.reporter_nickname || item.reporter_id}</div>
+              <div class="line">目标用户: ${item.target_user_nickname || item.target_user_id || "-"}</div>
+              <div class="line">原因: ${item.reason}</div>
+              <div class="line muted">消息: ${item.target_message_content || "-"}</div>
+              <div class="row">
+                <button class="btn-primary" onclick="reviewReport(${item.id}, 'processed', 'none')">通过</button>
+                <button class="btn-danger" onclick="reviewReport(${item.id}, 'processed', 'ban_target')">封禁被举报人</button>
+                <button onclick="reviewReport(${item.id}, 'rejected', 'none')">驳回</button>
+              </div>
+            </div>
+          `
+          )
+          .join("");
+      }
+
+      async function reviewReport(id, status, action) {
+        const note = prompt("处理备注（可选）", "");
+        await fetch(`${base()}/admin/reports/${id}`, {
+          method: "PATCH",
+          headers: headers(),
+          body: JSON.stringify({ status, action, note: note || "", reviewedBy: "admin-ui" })
+        });
+        loadReports();
+      }
+
+      async function loadUsers() {
+        const keyword = document.getElementById("userKeyword").value.trim();
+        const res = await fetch(`${base()}/admin/users?keyword=${encodeURIComponent(keyword)}`, {
+          headers: headers()
+        });
+        const data = await res.json();
+        const list = document.getElementById("userList");
+        if (!Array.isArray(data.data) || data.data.length === 0) {
+          list.innerHTML = "<div class='muted'>暂无用户</div>";
+          return;
+        }
+        list.innerHTML = data.data
+          .map(
+            (item) => `
+            <div class="row card">
+              <div style="min-width: 220px">${item.nickname || "未命名"} (#${item.id})</div>
+              <div style="min-width: 120px">${item.city || "-"}</div>
+              <div style="min-width: 120px">状态: ${item.status}</div>
+              <button onclick="setUserStatus(${item.id}, 'active')">解封</button>
+              <button class="btn-danger" onclick="setUserStatus(${item.id}, 'banned')">封禁</button>
+            </div>
+          `
+          )
+          .join("");
+      }
+
+      async function setUserStatus(userId, status) {
+        await fetch(`${base()}/admin/users/${userId}/status`, {
+          method: "PATCH",
+          headers: headers(),
+          body: JSON.stringify({ status })
+        });
+        loadUsers();
+      }
+    </script>
+  </body>
+</html>
