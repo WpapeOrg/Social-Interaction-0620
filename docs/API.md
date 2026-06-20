@@ -86,7 +86,10 @@
 
 ### `GET /conversations/{id}/messages`
 - 鉴权：用户鉴权
-- 返回指定会话消息（最多 200 条）。
+- Query 参数：
+  - `afterId`：可选，增量拉取起始消息 ID（默认 0）
+  - `limit`：可选，默认 200，最大 200
+- 返回指定会话消息。
 
 ### `POST /conversations/{id}/messages`
 - 鉴权：用户鉴权
@@ -183,4 +186,5 @@
 - `new_message`：新消息推送。
 - `read_receipt`：对方已读回执。
 - `typing_status`：对方输入状态变化。
+- `delivery_receipt`：消息送达回执。
 - `pong`：服务端心跳应答。

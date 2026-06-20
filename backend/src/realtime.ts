@@ -21,6 +21,11 @@ type ClientEvent =
       isTyping: boolean;
     }
   | {
+      type: "delivered";
+      conversationId: number;
+      messageId: number;
+    }
+  | {
       type: "ping";
     };
 
@@ -136,6 +141,49 @@ async function emitTypingStatus(
   });
 }
 
+async function emitDeliveryReceipt(
+  conversationId: number,
+  receiverId: number,
+  messageId: number
+): Promise<void> {
+  const participants = await getConversationParticipants(conversationId);
+  const senderIds = participants.filter((userId) => userId !== receiverId);
+  if (senderIds.length === 0) return;
+  emitToUsers(senderIds, {
+    type: "delivery_receipt",
+    conversationId,
+    receiverId,
+    messageId
+  });
+}
+
+async function markDelivered(
+  conversationId: number,
+  receiverId: number,
+  messageId: number
+): Promise<void> {
+  if (!Number.isInteger(messageId) || messageId <= 0) return;
+  const [messageRows] = await pool.query<RowDataPacket[]>(
+    `SELECT sender_id
+     FROM messages
+     WHERE id = ? AND conversation_id = ?
+     LIMIT 1`,
+    [messageId, conversationId]
+  );
+  if (!messageRows[0]) return;
+  if (Number(messageRows[0].sender_id) === receiverId) return;
+
+  await pool.query(
+    `INSERT INTO message_deliveries (conversation_id, user_id, last_delivered_message_id)
+     VALUES (?, ?, ?)
+     ON DUPLICATE KEY UPDATE
+       last_delivered_message_id = GREATEST(last_delivered_message_id, VALUES(last_delivered_message_id)),
+       updated_at = CURRENT_TIMESTAMP`,
+    [conversationId, receiverId, messageId]
+  );
+  await emitDeliveryReceipt(conversationId, receiverId, messageId);
+}
+
 async function handleSocketMessage(socket: SocketWithUser, rawData: Buffer): Promise<void> {
   if (!socket.userId) return;
   let event: ClientEvent;
@@ -157,6 +205,17 @@ async function handleSocketMessage(socket: SocketWithUser, rawData: Buffer): Pro
     const allowed = await canAccessConversation(socket.userId, conversationId);
     if (!allowed) return;
     await emitTypingStatus(conversationId, socket.userId, isTyping);
+    return;
+  }
+
+  if (event.type === "delivered") {
+    const conversationId = Number(event.conversationId);
+    const messageId = Number(event.messageId);
+    if (!Number.isInteger(conversationId) || conversationId <= 0) return;
+    if (!Number.isInteger(messageId) || messageId <= 0) return;
+    const allowed = await canAccessConversation(socket.userId, conversationId);
+    if (!allowed) return;
+    await markDelivered(conversationId, socket.userId, messageId);
   }
 }
 

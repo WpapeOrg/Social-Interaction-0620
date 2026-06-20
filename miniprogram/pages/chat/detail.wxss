@@ -18,3 +18,9 @@ input {
   color: #9ef0ff;
   font-size: 22rpx;
 }
+
+.delivery-tip {
+  margin-top: 6rpx;
+  color: #b0ffc5;
+  font-size: 22rpx;
+}
