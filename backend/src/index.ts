@@ -3,6 +3,7 @@ import express from "express";
 import helmet from "helmet";
 import morgan from "morgan";
 import { config } from "./config";
+import { registerRealtimeGateway } from "./realtime";
 import { router } from "./routes";
 
 const app = express();
@@ -28,6 +29,8 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
   res.status(500).json({ message: "Internal Server Error" });
 });
 
-app.listen(port, () => {
+const server = app.listen(port, () => {
   console.log(`API listening on http://localhost:${port}`);
 });
+
+registerRealtimeGateway(server);

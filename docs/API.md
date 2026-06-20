@@ -7,6 +7,10 @@
 - 数据格式：`application/json`
 - 用户鉴权 Header：`Authorization: Bearer <your-token>`
 - 管理鉴权 Header：`x-admin-key: <your-admin-key>`
+- WebSocket：`ws://localhost:3000/ws?token=<url-encoded-bearer-token>`
+- WebSocket 客户端事件：
+  - `typing`：上报输入中状态 `{ type, conversationId, isTyping }`
+  - `ping`：连接保活
 
 ## 健康检查
 
@@ -78,7 +82,7 @@
 
 ### `GET /conversations`
 - 鉴权：用户鉴权
-- 返回当前用户可访问会话列表。
+- 返回当前用户可访问会话列表，含 `unread_count` 未读数量。
 
 ### `GET /conversations/{id}/messages`
 - 鉴权：用户鉴权
@@ -92,6 +96,16 @@
   "content": "你好，认识一下"
 }
 ```
+
+### `POST /conversations/{id}/read`
+- 鉴权：用户鉴权
+- 请求体（可选）：
+```json
+{
+  "lastReadMessageId": 123
+}
+```
+- 说明：未传时默认标记该会话当前最新消息为已读。
 
 ## 4. 安全与关系
 
@@ -163,3 +177,10 @@
 - `403`：无权限访问目标会话。
 - `404`：目标资源不存在。
 - `500`：服务内部错误。
+
+## 7. WebSocket 下行事件
+- `connected`：连接建立成功。
+- `new_message`：新消息推送。
+- `read_receipt`：对方已读回执。
+- `typing_status`：对方输入状态变化。
+- `pong`：服务端心跳应答。
