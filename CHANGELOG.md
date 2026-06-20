@@ -30,3 +30,4 @@
 - **镜像源替换**：将 `backend/package-lock.json` 的依赖下载源从 `registry.m.jd.com` 统一替换为 `registry.npmmirror.com`。
 - **版本维护分支约定**：新增 `feature/version-maintenance` 作为后续 Node/npm/镜像源相关改动的统一迭代分支。
 - **大版本拆分计划**：新增 `docs/RELEASE_VERSIONS.md`，按已实现/未实现能力划分 V1.0~V4.0，并给出对应上线分支命名。
+- **版本号同步**：确认当前最新大版本为 `V1.3`，并将 `backend/package.json` 版本同步为 `1.3.0`。
