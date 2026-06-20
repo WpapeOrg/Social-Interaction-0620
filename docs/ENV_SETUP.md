@@ -11,6 +11,15 @@
 版本建议说明：
 - 本项目当前依赖在 `Node.js 20.19.x + npm 10.9.2` 组合下验证稳定。
 - `npm 11.13.0` 可能出现 `Exit handler never called!`（npm CLI 自身异常）。
+- 仓库根目录已提供 `.nvmrc` 与 `.npmrc`，可用于团队统一版本与安装约束。
+
+快速对齐本地版本：
+
+```bash
+nvm use
+node -v
+npm -v
+```
 
 ## 2. 启动基础服务
 

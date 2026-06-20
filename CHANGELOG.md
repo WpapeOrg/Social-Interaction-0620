@@ -26,3 +26,4 @@
 - **分支技能规则补充**：`commit-flow-enforcer` 新增“相近需求迭代复用原分支，不重复创建分支”规则。
 - **Node/npm 推荐版本补充**：在 `README.md` 与 `docs/ENV_SETUP.md` 增加推荐版本（Node 20 LTS + npm 10）及 `npm 11.13.0` 报错排查指引。
 - **Node/npm 版本收敛**：将推荐版本明确为 `Node.js 20.19.x + npm 10.9.2`，并在 `backend/package.json` 增加 `engines` 约束。
+- **版本对齐文件补充**：新增根目录 `.nvmrc`（`20.19.0`）与 `.npmrc`（`engine-strict=true`），并在环境文档补充对齐使用方式。
