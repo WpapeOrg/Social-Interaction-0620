@@ -25,6 +25,16 @@ export const config = {
     mockFailureRate: Math.min(
       Math.max(Number(process.env.PUSH_MOCK_FAILURE_RATE || 0), 0),
       1
-    )
+    ),
+    wxAppId: process.env.PUSH_WX_APP_ID || "",
+    wxAppSecret: process.env.PUSH_WX_APP_SECRET || "",
+    wxTemplateId: process.env.PUSH_WX_TEMPLATE_ID || "",
+    wxPagePath: process.env.PUSH_WX_PAGE_PATH || "pages/chat/list",
+    wxMiniProgramState: process.env.PUSH_WX_MINIPROGRAM_STATE || "formal",
+    wxLang: process.env.PUSH_WX_LANG || "zh_CN",
+    wxTitleKey: process.env.PUSH_WX_TITLE_KEY || "thing1",
+    wxContentKey: process.env.PUSH_WX_CONTENT_KEY || "thing2",
+    wxCallbackToken: process.env.PUSH_WX_CALLBACK_TOKEN || "",
+    wxCallbackAesKey: process.env.PUSH_WX_CALLBACK_AES_KEY || ""
   }
 };

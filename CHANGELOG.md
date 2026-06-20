@@ -8,6 +8,8 @@
 - **数据库迁移补齐**：新增 `backend/sql/realtime_migration_004.sql`，为历史库补齐通知配置表与通知任务表。
 - **通知 Worker 重试机制**：新增通知任务消费 Worker，支持指数退避重试、处理中状态与死信状态（`dead`）。
 - **通知任务结构升级**：新增 `backend/sql/realtime_migration_005.sql`，补齐 `retry_count`、`max_retries` 字段。
+- **微信订阅消息真实投递**：新增微信推送适配器，任务消费从 mock 切换为可配置的微信订阅消息发送。
+- **回调签名校验接口**：新增 `/wechat/push/callback` GET/POST 接口并校验微信 `signature`。
 
 ### Documentation
 - **文档结构重构**：将 README 调整为项目入口，新增并拆分详细文档到 `docs/`，避免重复内容。

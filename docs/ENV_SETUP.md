@@ -55,6 +55,11 @@ mysql -h 127.0.0.1 -P 3306 -u social_user -psocial_pass social_interaction < sql
 
 ```bash
 PUSH_WORKER_ENABLED=true
+PUSH_MOCK_MODE=false
+PUSH_WX_APP_ID=<your-app-id>
+PUSH_WX_APP_SECRET=<your-app-secret>
+PUSH_WX_TEMPLATE_ID=<your-template-id>
+PUSH_WX_CALLBACK_TOKEN=<your-callback-token>
 ```
 
 然后启动后端即可内嵌运行通知 Worker，或单独执行：
@@ -62,6 +67,12 @@ PUSH_WORKER_ENABLED=true
 ```bash
 cd backend
 npm run worker
+```
+
+微信后台回调地址配置示例：
+
+```bash
+GET/POST http://<your-domain>/wechat/push/callback
 ```
 
 ## 7. 小程序导入

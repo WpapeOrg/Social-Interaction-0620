@@ -8,6 +8,7 @@ import { requireAdmin } from "./middleware/admin";
 import { requireAuth } from "./middleware/auth";
 import { emitConversationMessage, emitReadReceipt, isUserOnline } from "./realtime";
 import { codeToOpenId } from "./utils";
+import { verifyWechatCallbackSignature } from "./wechat-push";
 
 const router = Router();
 const wrap = (handler: RequestHandler): RequestHandler => (req, res, next) => {
@@ -126,6 +127,31 @@ router.post("/auth/wx-login", wrap(async (req, res) => {
 
   const token = jwt.sign({ userId }, config.jwtSecret, { expiresIn: "7d" });
   res.json({ data: { token, userId } });
+}));
+
+router.get("/wechat/push/callback", wrap(async (req, res) => {
+  const signature = String(req.query.signature || "");
+  const timestamp = String(req.query.timestamp || "");
+  const nonce = String(req.query.nonce || "");
+  const echoStr = String(req.query.echostr || "");
+  const passed = verifyWechatCallbackSignature({ signature, timestamp, nonce });
+  if (!passed) {
+    res.status(401).send("signature invalid");
+    return;
+  }
+  res.type("text/plain").send(echoStr || "ok");
+}));
+
+router.post("/wechat/push/callback", wrap(async (req, res) => {
+  const signature = String(req.query.signature || "");
+  const timestamp = String(req.query.timestamp || "");
+  const nonce = String(req.query.nonce || "");
+  const passed = verifyWechatCallbackSignature({ signature, timestamp, nonce });
+  if (!passed) {
+    res.status(401).json({ message: "signature invalid" });
+    return;
+  }
+  res.json({ message: "success" });
 }));
 
 router.get("/profile/me", requireAuth, wrap(async (req, res) => {

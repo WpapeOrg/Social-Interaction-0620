@@ -156,7 +156,26 @@
 ```
 - `status`：`pending` / `sent` / `failed` / `dead`
 
-## 5. 安全与关系
+## 5. 微信推送回调签名校验
+
+### `GET /wechat/push/callback`
+- 鉴权：否（微信服务端签名校验）
+- Query 参数：
+  - `signature`
+  - `timestamp`
+  - `nonce`
+  - `echostr`
+- 说明：用于微信服务器配置阶段的 URL 校验，签名通过后原样返回 `echostr`。
+
+### `POST /wechat/push/callback`
+- 鉴权：否（微信服务端签名校验）
+- Query 参数：
+  - `signature`
+  - `timestamp`
+  - `nonce`
+- 说明：用于接收微信推送回调请求，当前版本仅做签名校验与应答。
+
+## 6. 安全与关系
 
 ### `POST /reports`
 - 鉴权：用户鉴权
@@ -182,7 +201,7 @@
 - 鉴权：用户鉴权
 - 解除拉黑关系。
 
-## 6. 管理后台接口
+## 7. 管理后台接口
 
 ### `GET /admin/reports`
 - 鉴权：管理鉴权
@@ -220,14 +239,14 @@
 ```
 - `status`：`active` / `banned`
 
-## 7. 常见错误码
+## 8. 常见错误码
 - `400`：参数错误。
 - `401`：未登录或管理 Key 错误。
 - `403`：无权限访问目标会话。
 - `404`：目标资源不存在。
 - `500`：服务内部错误。
 
-## 8. WebSocket 下行事件
+## 9. WebSocket 下行事件
 - `connected`：连接建立成功。
 - `new_message`：新消息推送。
 - `read_receipt`：对方已读回执。
