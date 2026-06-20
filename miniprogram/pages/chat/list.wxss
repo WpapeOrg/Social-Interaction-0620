@@ -1,0 +1,8 @@
+.card {
+  border: 1rpx solid rgba(255, 255, 255, 0.14);
+}
+
+.session-title {
+  font-weight: 600;
+  margin-bottom: 8rpx;
+}
