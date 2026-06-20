@@ -4,6 +4,10 @@
   "private": true,
   "description": "Backend API for social interaction mini program",
   "main": "dist/index.js",
+  "engines": {
+    "node": ">=20.19.0 <21",
+    "npm": "10.9.2"
+  },
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "worker": "ts-node-dev --respawn --transpile-only src/worker.ts",
