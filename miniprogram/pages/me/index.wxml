@@ -1,0 +1,13 @@
+<view class="container">
+  <view class="hero motion-enter">
+    <view class="hero-title">我的主页</view>
+    <view class="hero-subtitle">完善资料，提升扩列成功率。</view>
+  </view>
+  <view class="card motion-enter delay-1 stack-12">
+    <view class="card-title">账号设置</view>
+    <view class="chip chip-active">安全等级：基础</view>
+    <button class="btn-primary" bindtap="toProfile">编辑资料</button>
+    <button class="btn-secondary">黑名单管理</button>
+    <button class="btn-danger">隐私与举报</button>
+  </view>
+</view>
