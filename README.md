@@ -36,6 +36,7 @@ npm run dev
 
 ## 文档索引
 - [功能实现清单](docs/IMPLEMENTED_FEATURES.md)
+- [大版本拆分与上线计划](docs/RELEASE_VERSIONS.md)
 - [产品路线图](docs/ROADMAP.md)
 - [迭代执行计划（按周）](docs/ITERATION_PLAN.md)
 - [环境搭建](docs/ENV_SETUP.md)
