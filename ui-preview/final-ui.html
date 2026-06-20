@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>扩列星球 UI Final Preview</title>
+    <style>
+      :root {
+        --bg-deep: #050912;
+        --bg-panel: rgba(13, 20, 36, 0.92);
+        --line: rgba(128, 222, 255, 0.22);
+        --text-main: #ecf2ff;
+        --text-sub: #a0abc2;
+        --brand-a: #13c2ff;
+        --brand-b: #3d78ff;
+        --warn-a: #ff8a46;
+        --warn-b: #ff5a44;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "SF Pro Rounded", "Avenir Next", "PingFang SC", sans-serif;
+        color: var(--text-main);
+        background:
+          radial-gradient(circle at 10% 0%, #1d2d5d 0%, rgba(29, 45, 93, 0) 40%),
+          radial-gradient(circle at 90% 0%, #2d1742 0%, rgba(45, 23, 66, 0) 38%),
+          var(--bg-deep);
+      }
+
+      .page {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 28px 18px 34px;
+      }
+
+      .headline {
+        margin-bottom: 16px;
+      }
+
+      .headline h1 {
+        margin: 0;
+        font-size: 34px;
+        letter-spacing: 0.4px;
+      }
+
+      .headline p {
+        margin: 10px 0 0;
+        color: var(--text-sub);
+      }
+
+      .screens {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(265px, 1fr));
+        gap: 18px;
+      }
+
+      .phone {
+        background: rgba(5, 9, 18, 0.86);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 28px;
+        padding: 14px;
+        min-height: 560px;
+        box-shadow: 0 18px 48px rgba(0, 0, 0, 0.35);
+      }
+
+      .screen {
+        border-radius: 22px;
+        min-height: 530px;
+        background:
+          linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+          radial-gradient(circle at 20% 0%, #172952 0%, rgba(23, 41, 82, 0) 42%),
+          #070d1b;
+        background-size: 42px 42px, 42px 42px, auto, auto;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .hero {
+        border-radius: 18px;
+        padding: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: linear-gradient(115deg, rgba(18, 190, 255, 0.23), rgba(255, 119, 51, 0.2));
+      }
+
+      .hero h3 {
+        margin: 0;
+        font-size: 23px;
+      }
+
+      .hero p {
+        margin: 8px 0 0;
+        font-size: 13px;
+        color: #d4deef;
+      }
+
+      .card {
+        background: var(--bg-panel);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 12px;
+      }
+
+      .muted {
+        color: var(--text-sub);
+      }
+
+      .btn {
+        border: none;
+        border-radius: 12px;
+        padding: 10px 12px;
+        color: #f8fbff;
+        font-weight: 600;
+      }
+
+      .btn-primary {
+        background: linear-gradient(90deg, var(--brand-a), var(--brand-b));
+      }
+
+      .btn-secondary {
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      .btn-warn {
+        background: linear-gradient(90deg, var(--warn-a), var(--warn-b));
+      }
+
+      .row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .row-between {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .chip {
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        padding: 4px 10px;
+        font-size: 12px;
+      }
+
+      .bubble {
+        border-radius: 14px;
+        padding: 10px 12px;
+        max-width: 80%;
+      }
+
+      .bubble-other {
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        background: rgba(255, 255, 255, 0.07);
+      }
+
+      .bubble-me {
+        margin-left: auto;
+        border: 1px solid rgba(58, 214, 255, 0.5);
+        background: linear-gradient(90deg, rgba(18, 192, 255, 0.22), rgba(58, 120, 255, 0.27));
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="headline">
+        <h1>扩列星球 · UI Final Preview</h1>
+        <p>最终视觉稿预览：登录、推荐、聊天、我的。用于页面改造验收与设计对齐。</p>
+      </section>
+
+      <section class="screens">
+        <article class="phone">
+          <div class="screen">
+            <div class="hero">
+              <h3>扩列星球</h3>
+              <p>Match, chat, and vibe with new friends.</p>
+            </div>
+            <div class="card">
+              <div style="font-size: 18px; font-weight: 700">极速开启扩列</div>
+              <div class="muted" style="margin-top: 8px">微信登录后 30 秒完成注册与推荐初始化。</div>
+            </div>
+            <button class="btn btn-primary">微信一键登录</button>
+          </div>
+        </article>
+
+        <article class="phone">
+          <div class="screen">
+            <div class="hero">
+              <h3>今日推荐</h3>
+              <p>同城优先 + 兴趣相近 + 活跃度加权</p>
+            </div>
+            <div class="card">
+              <div class="row-between">
+                <div style="font-weight: 700">Lina · 上海</div>
+                <span class="chip">在线</span>
+              </div>
+              <div class="muted" style="margin-top: 8px">摄影 / 滑板 / 徒步，想找周末一起出片的搭子。</div>
+              <div class="row" style="margin-top: 12px">
+                <button class="btn btn-secondary" style="flex: 1">跳过</button>
+                <button class="btn btn-primary" style="flex: 1">喜欢</button>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article class="phone">
+          <div class="screen">
+            <div class="hero">
+              <h3>正在聊天</h3>
+              <p>保持友善，遇到不当内容可立即举报。</p>
+            </div>
+            <div class="bubble bubble-other">嗨，我们周末要不要去武康路拍照？</div>
+            <div class="bubble bubble-me">可以，我也想拍夜景，周六晚上怎么样。</div>
+            <div style="flex: 1"></div>
+            <div class="row">
+              <button class="btn btn-secondary" style="flex: 1">举报</button>
+              <button class="btn btn-primary" style="flex: 1">发送</button>
+            </div>
+          </div>
+        </article>
+
+        <article class="phone">
+          <div class="screen">
+            <div class="hero">
+              <h3>我的主页</h3>
+              <p>完善资料提升匹配成功率</p>
+            </div>
+            <div class="card">
+              <div style="font-weight: 700">账号设置</div>
+              <div class="muted" style="margin-top: 8px">账号安全等级：基础</div>
+              <div class="row" style="margin-top: 12px">
+                <button class="btn btn-primary" style="flex: 1">编辑资料</button>
+                <button class="btn btn-secondary" style="flex: 1">黑名单</button>
+              </div>
+              <button class="btn btn-warn" style="width: 100%; margin-top: 10px">隐私与举报</button>
+            </div>
+          </div>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>
