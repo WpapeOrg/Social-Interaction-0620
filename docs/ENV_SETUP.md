@@ -36,6 +36,12 @@ curl http://localhost:3000/health
 
 数据库初始化与迁移请按 [数据库说明](DATABASE.md) 执行。
 
+实时聊天升级后，需额外执行：
+
+```bash
+mysql -h 127.0.0.1 -P 3306 -u social_user -psocial_pass social_interaction < sql/realtime_migration_002.sql
+```
+
 ## 5. 管理后台联调
 
 管理页说明请见 [管理后台使用说明](ADMIN_PANEL.md)。

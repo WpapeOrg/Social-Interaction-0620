@@ -6,6 +6,7 @@ import { pool } from "./db";
 import { requireActiveUser } from "./middleware/active-user";
 import { requireAdmin } from "./middleware/admin";
 import { requireAuth } from "./middleware/auth";
+import { emitConversationMessage, emitReadReceipt } from "./realtime";
 import { codeToOpenId } from "./utils";
 
 const router = Router();
@@ -184,12 +185,21 @@ router.get("/matches", requireAuth, requireActiveUser, wrap(async (req, res) => 
 
 router.get("/conversations", requireAuth, requireActiveUser, wrap(async (req, res) => {
   const [rows] = await pool.query<RowDataPacket[]>(
-    `SELECT c.id, c.match_id, c.last_message_at
+    `SELECT c.id, c.match_id, c.last_message_at,
+            (
+              SELECT COUNT(1)
+              FROM messages msg
+              LEFT JOIN message_reads mr
+                ON mr.conversation_id = c.id AND mr.user_id = ?
+              WHERE msg.conversation_id = c.id
+                AND msg.sender_id <> ?
+                AND msg.id > COALESCE(mr.last_read_message_id, 0)
+            ) AS unread_count
      FROM conversations c
      JOIN matches m ON m.id = c.match_id
      WHERE (m.user_a = ? OR m.user_b = ?) AND m.status = 'active'
      ORDER BY c.last_message_at DESC, c.id DESC`,
-    [req.authUserId, req.authUserId]
+    [req.authUserId, req.authUserId, req.authUserId, req.authUserId]
   );
   res.json({ data: rows });
 }));
@@ -252,7 +262,59 @@ router.post("/conversations/:id/messages", requireAuth, requireActiveUser, wrap(
     conversationId
   ]);
 
-  res.json({ data: { id: result.insertId } });
+  const [messageRows] = await pool.query<RowDataPacket[]>(
+    `SELECT id, conversation_id, sender_id, type, content, created_at
+     FROM messages WHERE id = ? LIMIT 1`,
+    [result.insertId]
+  );
+  if (messageRows[0]) {
+    await emitConversationMessage(conversationId, messageRows[0], req.authUserId || undefined);
+  }
+
+  res.json({ data: messageRows[0] || { id: result.insertId } });
+}));
+
+router.post("/conversations/:id/read", requireAuth, requireActiveUser, wrap(async (req, res) => {
+  const conversationId = Number(req.params.id);
+  const lastReadMessageId = Number(req.body?.lastReadMessageId);
+  if (!Number.isInteger(conversationId) || conversationId <= 0) {
+    res.status(400).json({ message: "invalid conversation id" });
+    return;
+  }
+
+  const [allowed] = await pool.query<RowDataPacket[]>(
+    `SELECT c.id
+     FROM conversations c
+     JOIN matches m ON m.id = c.match_id
+     WHERE c.id = ? AND m.status = 'active' AND (m.user_a = ? OR m.user_b = ?)
+     LIMIT 1`,
+    [conversationId, req.authUserId, req.authUserId]
+  );
+  if (!allowed[0]) {
+    res.status(403).json({ message: "forbidden" });
+    return;
+  }
+
+  const [maxRows] = await pool.query<RowDataPacket[]>(
+    "SELECT COALESCE(MAX(id), 0) AS max_id FROM messages WHERE conversation_id = ?",
+    [conversationId]
+  );
+  const maxId = Number(maxRows[0]?.max_id || 0);
+  const normalizedReadId = Number.isInteger(lastReadMessageId)
+    ? Math.max(0, Math.min(lastReadMessageId, maxId))
+    : maxId;
+
+  await pool.query(
+    `INSERT INTO message_reads (conversation_id, user_id, last_read_message_id)
+     VALUES (?, ?, ?)
+     ON DUPLICATE KEY UPDATE
+       last_read_message_id = GREATEST(last_read_message_id, VALUES(last_read_message_id)),
+       updated_at = CURRENT_TIMESTAMP`,
+    [conversationId, req.authUserId, normalizedReadId]
+  );
+
+  await emitReadReceipt(conversationId, req.authUserId || 0, normalizedReadId);
+  res.json({ data: { conversationId, lastReadMessageId: normalizedReadId } });
 }));
 
 router.post("/reports", requireAuth, requireActiveUser, wrap(async (req, res) => {

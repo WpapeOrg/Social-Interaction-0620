@@ -7,6 +7,7 @@
 - 数据格式：`application/json`
 - 用户鉴权 Header：`Authorization: Bearer <your-token>`
 - 管理鉴权 Header：`x-admin-key: <your-admin-key>`
+- WebSocket：`ws://localhost:3000/ws?token=<url-encoded-bearer-token>`
 
 ## 健康检查
 
@@ -78,7 +79,7 @@
 
 ### `GET /conversations`
 - 鉴权：用户鉴权
-- 返回当前用户可访问会话列表。
+- 返回当前用户可访问会话列表，含 `unread_count` 未读数量。
 
 ### `GET /conversations/{id}/messages`
 - 鉴权：用户鉴权
@@ -92,6 +93,16 @@
   "content": "你好，认识一下"
 }
 ```
+
+### `POST /conversations/{id}/read`
+- 鉴权：用户鉴权
+- 请求体（可选）：
+```json
+{
+  "lastReadMessageId": 123
+}
+```
+- 说明：未传时默认标记该会话当前最新消息为已读。
 
 ## 4. 安全与关系
 
