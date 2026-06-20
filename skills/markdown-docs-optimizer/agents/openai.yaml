@@ -1,0 +1,4 @@
+interface:
+  display_name: "Markdown Docs Optimizer"
+  short_description: "Refactor docs into durable structure"
+  default_prompt: "Use $markdown-docs-optimizer to reorganize README and docs/*.md into canonical, non-duplicated project documentation."

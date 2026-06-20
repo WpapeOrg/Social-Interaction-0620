@@ -1,0 +1,4 @@
+interface:
+  display_name: "Commit Flow Enforcer"
+  short_description: "Enforce branch and commit hygiene"
+  default_prompt: "Use $commit-flow-enforcer to split work into clear branches, focused commits, and safe push/merge flow."
