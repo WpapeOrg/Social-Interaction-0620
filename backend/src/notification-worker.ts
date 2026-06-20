@@ -1,6 +1,7 @@
 import { PoolConnection, RowDataPacket } from "mysql2/promise";
 import { config } from "./config";
 import { pool } from "./db";
+import { sendWechatSubscribeMessage, WechatPushError } from "./wechat-push";
 
 type NotificationTaskRow = RowDataPacket & {
   id: number;
@@ -89,17 +90,30 @@ async function deliverTask(task: NotificationTask): Promise<void> {
   if (task.channel !== "wx_subscribe") {
     throw new PermanentDeliveryError(`unsupported channel: ${task.channel}`);
   }
-  if (!config.push.mockMode) {
-    throw new PermanentDeliveryError("wx subscribe delivery adapter is not configured");
+  if (config.push.mockMode) {
+    if (task.content.includes("[dead]")) {
+      throw new PermanentDeliveryError("dead-letter test marker");
+    }
+    if (task.content.includes("[retry]")) {
+      throw new Error("transient retry test marker");
+    }
+    if (Math.random() < config.push.mockFailureRate) {
+      throw new Error("transient mock network error");
+    }
+    return;
   }
-  if (task.content.includes("[dead]")) {
-    throw new PermanentDeliveryError("dead-letter test marker");
-  }
-  if (task.content.includes("[retry]")) {
-    throw new Error("transient retry test marker");
-  }
-  if (Math.random() < config.push.mockFailureRate) {
-    throw new Error("transient mock network error");
+
+  try {
+    await sendWechatSubscribeMessage({
+      userId: task.userId,
+      title: task.title,
+      content: task.content
+    });
+  } catch (error) {
+    if (error instanceof WechatPushError && error.permanent) {
+      throw new PermanentDeliveryError(error.message);
+    }
+    throw error;
   }
 }
 
