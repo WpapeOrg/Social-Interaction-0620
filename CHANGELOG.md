@@ -24,3 +24,5 @@
 - **新增迭代任务拆解**：新增 `docs/ITERATION_PLAN.md`，按周拆解页面、API、数据库、测试与验收标准。
 - **文档技能规则补充**：`markdown-docs-optimizer` 新增“每次提交前补充 CHANGELOG 变更记录”要求。
 - **分支技能规则补充**：`commit-flow-enforcer` 新增“相近需求迭代复用原分支，不重复创建分支”规则。
+- **Node/npm 推荐版本补充**：在 `README.md` 与 `docs/ENV_SETUP.md` 增加推荐版本（Node 20 LTS + npm 10）及 `npm 11.13.0` 报错排查指引。
+- **Node/npm 版本收敛**：将推荐版本明确为 `Node.js 20.19.x + npm 10.9.2`，并在 `backend/package.json` 增加 `engines` 约束。

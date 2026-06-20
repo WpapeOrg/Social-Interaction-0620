@@ -3,10 +3,14 @@
 本文档用于快速拉起本地开发环境（Docker + 后端 API + 小程序导入）。
 
 ## 1. 前置依赖
-- Node.js >= 20
-- npm >= 10
+- Node.js 20 LTS（推荐 `20.19.x`）
+- npm `10.9.2`（推荐固定版本）
 - Docker Desktop >= 4.x
 - 微信开发者工具
+
+版本建议说明：
+- 本项目当前依赖在 `Node.js 20.19.x + npm 10.9.2` 组合下验证稳定。
+- `npm 11.13.0` 可能出现 `Exit handler never called!`（npm CLI 自身异常）。
 
 ## 2. 启动基础服务
 
@@ -91,3 +95,28 @@ GET/POST http://<your-domain>/wechat/push/callback
 - `pages/chat/list`
 - `pages/chat/detail`
 - `pages/me/index`
+
+## 8. npm 异常排查（`Exit handler never called!`）
+
+当你使用 `npm 11.13.0` 安装依赖报错时，建议切回 `npm 10.9.2`：
+
+```bash
+node -v
+npm -v
+
+# 方案 A：仅切换 npm 版本
+npm i -g npm@10.9.2
+
+# 方案 B：使用 nvm 切换到 Node 20 LTS（再手动固定 npm 10.9.2）
+nvm install 20
+nvm use 20
+npm i -g npm@10.9.2
+```
+
+然后重新执行：
+
+```bash
+cd backend
+rm -rf node_modules package-lock.json
+npm install
+```

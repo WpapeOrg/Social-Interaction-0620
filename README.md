@@ -15,6 +15,9 @@
 详细状态见 [功能实现清单](docs/IMPLEMENTED_FEATURES.md)。
 
 ## 快速开始
+推荐本地版本：`Node.js 20 LTS（建议 20.19.x）` + `npm 10.9.2`。  
+已知问题：`npm 11.13.0` 在本项目中可能出现 `Exit handler never called!`。
+
 ```bash
 docker compose up -d
 cd backend
