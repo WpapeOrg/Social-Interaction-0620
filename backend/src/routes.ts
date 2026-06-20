@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import { ResultSetHeader, RowDataPacket } from "mysql2";
 import { config } from "./config";
 import { pool } from "./db";
+import { requireActiveUser } from "./middleware/active-user";
 import { requireAdmin } from "./middleware/admin";
 import { requireAuth } from "./middleware/auth";
 import { codeToOpenId } from "./utils";
@@ -52,7 +53,7 @@ router.get("/profile/me", requireAuth, wrap(async (req, res) => {
   res.json({ data: rows[0] });
 }));
 
-router.put("/profile/me", requireAuth, wrap(async (req, res) => {
+router.put("/profile/me", requireAuth, requireActiveUser, wrap(async (req, res) => {
   const { nickname, avatar, gender, ageRange, city, bio, tags } = req.body || {};
 
   await pool.query(
@@ -94,7 +95,7 @@ router.put("/profile/me", requireAuth, wrap(async (req, res) => {
   res.json({ message: "ok" });
 }));
 
-router.get("/recommendations", requireAuth, wrap(async (req, res) => {
+router.get("/recommendations", requireAuth, requireActiveUser, wrap(async (req, res) => {
   const [rows] = await pool.query<RowDataPacket[]>(
     `SELECT u.id, u.nickname, u.avatar, u.city, u.bio
      FROM users u
@@ -116,7 +117,7 @@ router.get("/recommendations", requireAuth, wrap(async (req, res) => {
   res.json({ data: rows });
 }));
 
-router.post("/swipes", requireAuth, wrap(async (req, res) => {
+router.post("/swipes", requireAuth, requireActiveUser, wrap(async (req, res) => {
   const targetUserId = Number(req.body?.targetUserId);
   const action = String(req.body?.action || "").toLowerCase();
   if (!Number.isInteger(targetUserId) || targetUserId <= 0 || !["like", "pass"].includes(action)) {
@@ -170,7 +171,7 @@ router.post("/swipes", requireAuth, wrap(async (req, res) => {
   res.json({ data: { matched } });
 }));
 
-router.get("/matches", requireAuth, wrap(async (req, res) => {
+router.get("/matches", requireAuth, requireActiveUser, wrap(async (req, res) => {
   const [rows] = await pool.query<RowDataPacket[]>(
     `SELECT m.id, m.user_a, m.user_b, m.status, m.created_at
      FROM matches m
@@ -181,7 +182,7 @@ router.get("/matches", requireAuth, wrap(async (req, res) => {
   res.json({ data: rows });
 }));
 
-router.get("/conversations", requireAuth, wrap(async (req, res) => {
+router.get("/conversations", requireAuth, requireActiveUser, wrap(async (req, res) => {
   const [rows] = await pool.query<RowDataPacket[]>(
     `SELECT c.id, c.match_id, c.last_message_at
      FROM conversations c
@@ -193,7 +194,7 @@ router.get("/conversations", requireAuth, wrap(async (req, res) => {
   res.json({ data: rows });
 }));
 
-router.get("/conversations/:id/messages", requireAuth, wrap(async (req, res) => {
+router.get("/conversations/:id/messages", requireAuth, requireActiveUser, wrap(async (req, res) => {
   const conversationId = Number(req.params.id);
   if (!Number.isInteger(conversationId) || conversationId <= 0) {
     res.status(400).json({ message: "invalid conversation id" });
@@ -221,7 +222,7 @@ router.get("/conversations/:id/messages", requireAuth, wrap(async (req, res) => 
   res.json({ data: rows });
 }));
 
-router.post("/conversations/:id/messages", requireAuth, wrap(async (req, res) => {
+router.post("/conversations/:id/messages", requireAuth, requireActiveUser, wrap(async (req, res) => {
   const conversationId = Number(req.params.id);
   const content = String(req.body?.content || "").trim();
 
@@ -254,7 +255,7 @@ router.post("/conversations/:id/messages", requireAuth, wrap(async (req, res) =>
   res.json({ data: { id: result.insertId } });
 }));
 
-router.post("/reports", requireAuth, wrap(async (req, res) => {
+router.post("/reports", requireAuth, requireActiveUser, wrap(async (req, res) => {
   const targetUserId = req.body?.targetUserId ? Number(req.body.targetUserId) : null;
   const targetMessageId = req.body?.targetMessageId ? Number(req.body.targetMessageId) : null;
   const reason = String(req.body?.reason || "").trim();
@@ -271,7 +272,7 @@ router.post("/reports", requireAuth, wrap(async (req, res) => {
   res.json({ data: { id: result.insertId } });
 }));
 
-router.post("/blocks", requireAuth, wrap(async (req, res) => {
+router.post("/blocks", requireAuth, requireActiveUser, wrap(async (req, res) => {
   const blockedUserId = Number(req.body?.blockedUserId);
   if (!Number.isInteger(blockedUserId) || blockedUserId <= 0) {
     res.status(400).json({ message: "invalid blocked user id" });
@@ -292,7 +293,7 @@ router.post("/blocks", requireAuth, wrap(async (req, res) => {
   res.json({ message: "ok" });
 }));
 
-router.delete("/blocks/:blockedUserId", requireAuth, wrap(async (req, res) => {
+router.delete("/blocks/:blockedUserId", requireAuth, requireActiveUser, wrap(async (req, res) => {
   const blockedUserId = Number(req.params.blockedUserId);
   if (!Number.isInteger(blockedUserId) || blockedUserId <= 0) {
     res.status(400).json({ message: "invalid blocked user id" });
