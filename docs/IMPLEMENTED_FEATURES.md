@@ -20,6 +20,7 @@
 - 聊天页接入 WebSocket 重连策略（退避重连 + 心跳保活）与离线后增量补偿。
 - 聊天页接入消息送达确认（delivery receipt）提示。
 - 聊天页支持同账号多设备状态同步（消息、已读、送达）。
+- 我的页新增“消息通知”开关，支持总开关/私聊提醒/匹配提醒保存。
 - 全局深色霓虹风格设计系统与基础动效。
 
 ## 2. 后端 API（MVP）
@@ -45,7 +46,13 @@
 - `POST /blocks`
 - `DELETE /blocks/{blockedUserId}`
 
-### 2.5 管理后台 API
+### 2.5 通知能力
+- `GET /notifications/settings`
+- `PUT /notifications/settings`
+- `GET /notifications/tasks`
+- `PATCH /notifications/tasks/{id}`
+
+### 2.6 管理后台 API
 - `GET /admin/reports`
 - `PATCH /admin/reports/{id}`
 - `GET /admin/users`
@@ -63,12 +70,13 @@
 - 已提供数据库初始化脚本与迁移脚本：
   - `backend/sql/init.sql`
   - `backend/sql/admin_migration_001.sql`
+  - `backend/sql/realtime_migration_004.sql`
 
 ## 5. 未实现功能（当前边界）
 
 ### 5.1 通信与在线能力
 - WebSocket 通道已接入，支持服务端主动下发新消息与已读回执。
-- 输入中状态已接入，离线消息推送仍未实现。
+- 输入中状态、送达回执已接入，离线推送任务已接入数据库队列（待对接微信订阅消息正式投递）。
 
 ### 5.2 推荐与匹配能力
 - 推荐策略仍为基础规则，未接入行为权重模型（活跃度、聊天成功率、偏好学习）。

@@ -6,13 +6,93 @@ import { pool } from "./db";
 import { requireActiveUser } from "./middleware/active-user";
 import { requireAdmin } from "./middleware/admin";
 import { requireAuth } from "./middleware/auth";
-import { emitConversationMessage, emitReadReceipt } from "./realtime";
+import { emitConversationMessage, emitReadReceipt, isUserOnline } from "./realtime";
 import { codeToOpenId } from "./utils";
 
 const router = Router();
 const wrap = (handler: RequestHandler): RequestHandler => (req, res, next) => {
   Promise.resolve(handler(req, res, next)).catch(next);
 };
+
+type NotificationSettings = {
+  pushEnabled: boolean;
+  messagePushEnabled: boolean;
+  matchPushEnabled: boolean;
+};
+
+function toTinyInt(value: boolean): 0 | 1 {
+  return value ? 1 : 0;
+}
+
+function parseBooleanField(value: unknown): boolean | null {
+  if (typeof value === "boolean") return value;
+  return null;
+}
+
+async function getConversationParticipantIds(conversationId: number): Promise<number[]> {
+  const [rows] = await pool.query<RowDataPacket[]>(
+    `SELECT m.user_a, m.user_b
+     FROM conversations c
+     JOIN matches m ON m.id = c.match_id
+     WHERE c.id = ? AND m.status = 'active'
+     LIMIT 1`,
+    [conversationId]
+  );
+  if (!rows[0]) return [];
+  return [Number(rows[0].user_a), Number(rows[0].user_b)];
+}
+
+async function getNotificationSettings(userId: number): Promise<NotificationSettings> {
+  const [rows] = await pool.query<RowDataPacket[]>(
+    `SELECT push_enabled, message_push_enabled, match_push_enabled
+     FROM notification_preferences
+     WHERE user_id = ?
+     LIMIT 1`,
+    [userId]
+  );
+  if (!rows[0]) {
+    await pool.query(
+      `INSERT IGNORE INTO notification_preferences
+       (user_id, push_enabled, message_push_enabled, match_push_enabled)
+       VALUES (?, 1, 1, 1)`,
+      [userId]
+    );
+    return {
+      pushEnabled: true,
+      messagePushEnabled: true,
+      matchPushEnabled: true
+    };
+  }
+  return {
+    pushEnabled: Number(rows[0].push_enabled) === 1,
+    messagePushEnabled: Number(rows[0].message_push_enabled) === 1,
+    matchPushEnabled: Number(rows[0].match_push_enabled) === 1
+  };
+}
+
+async function enqueueOfflineMessageNotification(params: {
+  conversationId: number;
+  senderId: number;
+  messageId: number;
+  messageContent: string;
+}): Promise<void> {
+  const participantIds = await getConversationParticipantIds(params.conversationId);
+  const receiverIds = participantIds.filter((userId) => userId !== params.senderId);
+  const plainText = params.messageContent.trim();
+  const contentPreview = plainText.length > 80 ? `${plainText.slice(0, 80)}...` : plainText;
+
+  for (const receiverId of receiverIds) {
+    if (isUserOnline(receiverId)) continue;
+    const settings = await getNotificationSettings(receiverId);
+    if (!settings.pushEnabled || !settings.messagePushEnabled) continue;
+    await pool.query(
+      `INSERT INTO notification_tasks
+       (user_id, conversation_id, message_id, task_type, channel, title, content, status)
+       VALUES (?, ?, ?, 'new_message', 'wx_subscribe', ?, ?, 'pending')`,
+      [receiverId, params.conversationId, params.messageId, "你收到一条新消息", contentPreview || "点击查看详情"]
+    );
+  }
+}
 
 router.post("/auth/wx-login", wrap(async (req, res) => {
   const code = String(req.body?.code || "").trim();
@@ -52,6 +132,99 @@ router.get("/profile/me", requireAuth, wrap(async (req, res) => {
     return;
   }
   res.json({ data: rows[0] });
+}));
+
+router.get("/notifications/settings", requireAuth, requireActiveUser, wrap(async (req, res) => {
+  const settings = await getNotificationSettings(req.authUserId || 0);
+  res.json({ data: settings });
+}));
+
+router.put("/notifications/settings", requireAuth, requireActiveUser, wrap(async (req, res) => {
+  const incomingPushEnabled = parseBooleanField(req.body?.pushEnabled);
+  const incomingMessagePushEnabled = parseBooleanField(req.body?.messagePushEnabled);
+  const incomingMatchPushEnabled = parseBooleanField(req.body?.matchPushEnabled);
+
+  if (
+    incomingPushEnabled === null &&
+    incomingMessagePushEnabled === null &&
+    incomingMatchPushEnabled === null
+  ) {
+    res.status(400).json({ message: "at least one setting is required" });
+    return;
+  }
+
+  const current = await getNotificationSettings(req.authUserId || 0);
+  const nextSettings: NotificationSettings = {
+    pushEnabled: incomingPushEnabled === null ? current.pushEnabled : incomingPushEnabled,
+    messagePushEnabled:
+      incomingMessagePushEnabled === null
+        ? current.messagePushEnabled
+        : incomingMessagePushEnabled,
+    matchPushEnabled:
+      incomingMatchPushEnabled === null ? current.matchPushEnabled : incomingMatchPushEnabled
+  };
+
+  await pool.query(
+    `INSERT INTO notification_preferences
+     (user_id, push_enabled, message_push_enabled, match_push_enabled)
+     VALUES (?, ?, ?, ?)
+     ON DUPLICATE KEY UPDATE
+       push_enabled = VALUES(push_enabled),
+       message_push_enabled = VALUES(message_push_enabled),
+       match_push_enabled = VALUES(match_push_enabled),
+       updated_at = CURRENT_TIMESTAMP`,
+    [
+      req.authUserId,
+      toTinyInt(nextSettings.pushEnabled),
+      toTinyInt(nextSettings.messagePushEnabled),
+      toTinyInt(nextSettings.matchPushEnabled)
+    ]
+  );
+
+  res.json({ data: nextSettings });
+}));
+
+router.get("/notifications/tasks", requireAuth, requireActiveUser, wrap(async (req, res) => {
+  const status = String(req.query.status || "").trim();
+  const limit = Math.min(Math.max(Number(req.query.limit || 50), 1), 200);
+  const statusValues = ["pending", "sent", "failed"];
+  const hasStatusFilter = statusValues.includes(status);
+
+  const [rows] = await pool.query<RowDataPacket[]>(
+    `SELECT id, user_id, conversation_id, message_id, task_type, channel, title, content,
+            status, error_message, scheduled_at, sent_at, created_at, updated_at
+     FROM notification_tasks
+     WHERE user_id = ?
+       AND (? = 0 OR status = ?)
+     ORDER BY id DESC
+     LIMIT ?`,
+    [req.authUserId, hasStatusFilter ? 1 : 0, status, limit]
+  );
+  res.json({ data: rows });
+}));
+
+router.patch("/notifications/tasks/:id", requireAuth, requireActiveUser, wrap(async (req, res) => {
+  const taskId = Number(req.params.id);
+  const status = String(req.body?.status || "").trim();
+  const errorMessage = String(req.body?.errorMessage || "").trim();
+
+  if (!Number.isInteger(taskId) || taskId <= 0) {
+    res.status(400).json({ message: "invalid task id" });
+    return;
+  }
+  if (!["pending", "sent", "failed"].includes(status)) {
+    res.status(400).json({ message: "invalid status" });
+    return;
+  }
+
+  const sentAt = status === "sent" ? new Date() : null;
+  await pool.query(
+    `UPDATE notification_tasks
+     SET status = ?, error_message = ?, sent_at = ?, updated_at = CURRENT_TIMESTAMP
+     WHERE id = ? AND user_id = ?`,
+    [status, errorMessage || null, sentAt, taskId, req.authUserId]
+  );
+  res.json({ message: "ok" });
 }));
 
 router.put("/profile/me", requireAuth, requireActiveUser, wrap(async (req, res) => {
@@ -274,6 +447,12 @@ router.post("/conversations/:id/messages", requireAuth, requireActiveUser, wrap(
   );
   if (messageRows[0]) {
     await emitConversationMessage(conversationId, messageRows[0]);
+    await enqueueOfflineMessageNotification({
+      conversationId,
+      senderId: req.authUserId || 0,
+      messageId: Number(messageRows[0].id),
+      messageContent: String(messageRows[0].content || "")
+    });
   }
 
   res.json({ data: messageRows[0] || { id: result.insertId } });

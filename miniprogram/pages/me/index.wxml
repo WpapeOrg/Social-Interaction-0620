@@ -10,4 +10,42 @@
     <button class="btn-secondary">黑名单管理</button>
     <button class="btn-danger">隐私与举报</button>
   </view>
+  <view class="card motion-enter delay-2 stack-12">
+    <view class="card-title">消息通知</view>
+    <view class="card-subtitle">离线消息提醒与系统提醒开关</view>
+    <view class="setting-row">
+      <view>总开关</view>
+      <switch
+        checked="{{notificationSettings.pushEnabled}}"
+        bindchange="onTogglePush"
+        color="#17c4ff"
+      />
+    </view>
+    <view class="setting-row">
+      <view>私聊新消息提醒</view>
+      <switch
+        checked="{{notificationSettings.messagePushEnabled}}"
+        disabled="{{!notificationSettings.pushEnabled}}"
+        bindchange="onToggleMessagePush"
+        color="#17c4ff"
+      />
+    </view>
+    <view class="setting-row">
+      <view>匹配成功提醒</view>
+      <switch
+        checked="{{notificationSettings.matchPushEnabled}}"
+        disabled="{{!notificationSettings.pushEnabled}}"
+        bindchange="onToggleMatchPush"
+        color="#17c4ff"
+      />
+    </view>
+    <button
+      class="btn-primary"
+      bindtap="onSaveNotificationSettings"
+      loading="{{savingNotificationSettings}}"
+      disabled="{{loadingNotificationSettings || savingNotificationSettings}}"
+    >
+      保存通知设置
+    </button>
+  </view>
 </view>

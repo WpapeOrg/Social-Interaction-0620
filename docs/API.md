@@ -110,7 +110,52 @@
 ```
 - 说明：未传时默认标记该会话当前最新消息为已读。
 
-## 4. 安全与关系
+## 4. 通知与推送设置
+
+### `GET /notifications/settings`
+- 鉴权：用户鉴权
+- 返回当前用户通知开关配置：
+```json
+{
+  "data": {
+    "pushEnabled": true,
+    "messagePushEnabled": true,
+    "matchPushEnabled": true
+  }
+}
+```
+
+### `PUT /notifications/settings`
+- 鉴权：用户鉴权
+- 请求体（至少一个字段）：
+```json
+{
+  "pushEnabled": true,
+  "messagePushEnabled": true,
+  "matchPushEnabled": false
+}
+```
+- 说明：用于“小程序-我的-消息通知”设置持久化。
+
+### `GET /notifications/tasks`
+- 鉴权：用户鉴权
+- Query 参数：
+  - `status`：可选，`pending` / `sent` / `failed`
+  - `limit`：可选，默认 50，最大 200
+- 说明：查询当前用户通知任务（用于联调验证离线推送任务入库）。
+
+### `PATCH /notifications/tasks/{id}`
+- 鉴权：用户鉴权
+- 请求体：
+```json
+{
+  "status": "sent",
+  "errorMessage": ""
+}
+```
+- `status`：`pending` / `sent` / `failed`
+
+## 5. 安全与关系
 
 ### `POST /reports`
 - 鉴权：用户鉴权
@@ -136,7 +181,7 @@
 - 鉴权：用户鉴权
 - 解除拉黑关系。
 
-## 5. 管理后台接口
+## 6. 管理后台接口
 
 ### `GET /admin/reports`
 - 鉴权：管理鉴权
@@ -174,14 +219,14 @@
 ```
 - `status`：`active` / `banned`
 
-## 6. 常见错误码
+## 7. 常见错误码
 - `400`：参数错误。
 - `401`：未登录或管理 Key 错误。
 - `403`：无权限访问目标会话。
 - `404`：目标资源不存在。
 - `500`：服务内部错误。
 
-## 7. WebSocket 下行事件
+## 8. WebSocket 下行事件
 - `connected`：连接建立成功。
 - `new_message`：新消息推送。
 - `read_receipt`：对方已读回执。
