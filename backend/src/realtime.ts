@@ -59,6 +59,15 @@ function emitToUsers(userIds: number[], payload: Record<string, unknown>): void 
   }
 }
 
+export function isUserOnline(userId: number): boolean {
+  const socketSet = userSocketMap.get(userId);
+  if (!socketSet || socketSet.size === 0) return false;
+  for (const socket of socketSet) {
+    if (socket.readyState === WebSocket.OPEN) return true;
+  }
+  return false;
+}
+
 async function getConversationParticipants(conversationId: number): Promise<number[]> {
   const [rows] = await pool.query<RowDataPacket[]>(
     `SELECT m.user_a, m.user_b

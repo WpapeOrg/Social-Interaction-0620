@@ -14,6 +14,7 @@
 cd backend
 mysql -h 127.0.0.1 -P 3306 -u social_user -psocial_pass social_interaction < sql/init.sql
 mysql -h 127.0.0.1 -P 3306 -u social_user -psocial_pass social_interaction < sql/admin_migration_001.sql
+mysql -h 127.0.0.1 -P 3306 -u social_user -psocial_pass social_interaction < sql/realtime_migration_004.sql
 ```
 
 ## 3. 核心表
@@ -34,6 +35,12 @@ mysql -h 127.0.0.1 -P 3306 -u social_user -psocial_pass social_interaction < sql
 - `message_reads`
 - `message_deliveries`
 
+### 通知与推送
+- `notification_preferences`
+  - 用户通知配置总开关、私聊提醒开关、匹配提醒开关。
+- `notification_tasks`
+  - 离线通知任务队列，记录任务状态（`pending/sent/failed`）与错误信息。
+
 ### 举报与审核
 - `reports`
   - 包含 `status`、`review_note`、`reviewed_by`、`reviewed_at` 等处理字段。
@@ -47,6 +54,8 @@ mysql -h 127.0.0.1 -P 3306 -u social_user -psocial_pass social_interaction < sql
   - 增加消息已读状态表 `message_reads`（用于未读计数与已读回执）。
 - `backend/sql/realtime_migration_003.sql`
   - 增加消息送达状态表 `message_deliveries`（用于送达确认）。
+- `backend/sql/realtime_migration_004.sql`
+  - 增加通知设置表 `notification_preferences` 与通知任务表 `notification_tasks`。
 
 ## 5. 运维建议（MVP 阶段）
 - 每次变更库结构时新增独立迁移文件，避免修改历史迁移。

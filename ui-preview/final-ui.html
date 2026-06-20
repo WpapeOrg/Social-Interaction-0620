@@ -143,6 +143,18 @@
         gap: 8px;
       }
 
+      .setting-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 9px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      }
+
+      .setting-row:last-child {
+        border-bottom: none;
+      }
+
       .chip {
         border-radius: 999px;
         border: 1px solid rgba(255, 255, 255, 0.18);
@@ -240,6 +252,23 @@
                 <button class="btn btn-secondary" style="flex: 1">黑名单</button>
               </div>
               <button class="btn btn-warn" style="width: 100%; margin-top: 10px">隐私与举报</button>
+            </div>
+            <div class="card">
+              <div style="font-weight: 700">消息通知</div>
+              <div class="muted" style="margin-top: 8px">离线消息提醒与匹配提醒设置</div>
+              <div class="setting-row" style="margin-top: 8px">
+                <span>总开关</span>
+                <span class="chip">开启</span>
+              </div>
+              <div class="setting-row">
+                <span>私聊新消息提醒</span>
+                <span class="chip">开启</span>
+              </div>
+              <div class="setting-row">
+                <span>匹配成功提醒</span>
+                <span class="chip">开启</span>
+              </div>
+              <button class="btn btn-primary" style="width: 100%; margin-top: 12px">保存通知设置</button>
             </div>
           </div>
         </article>

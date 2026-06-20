@@ -2,6 +2,11 @@
 
 ## 2026-06-20
 
+### Features
+- **离线推送任务能力**：新增通知偏好接口与通知任务接口，消息发送后可按在线状态与用户偏好写入离线通知任务队列。
+- **我的页通知设置**：新增“消息通知”设置卡片，支持总开关、私聊提醒、匹配提醒的读取与保存。
+- **数据库迁移补齐**：新增 `backend/sql/realtime_migration_004.sql`，为历史库补齐通知配置表与通知任务表。
+
 ### Documentation
 - **文档结构重构**：将 README 调整为项目入口，新增并拆分详细文档到 `docs/`，避免重复内容。
 - **新增专题文档**：新增 `docs/API.md`、`docs/DATABASE.md`、`docs/ADMIN_PANEL.md`、`docs/IMPLEMENTED_FEATURES.md`。
