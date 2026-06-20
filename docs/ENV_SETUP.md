@@ -40,6 +40,7 @@ curl http://localhost:3000/health
 
 ```bash
 mysql -h 127.0.0.1 -P 3306 -u social_user -psocial_pass social_interaction < sql/realtime_migration_002.sql
+mysql -h 127.0.0.1 -P 3306 -u social_user -psocial_pass social_interaction < sql/realtime_migration_003.sql
 ```
 
 ## 5. 管理后台联调

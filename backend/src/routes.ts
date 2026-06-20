@@ -206,6 +206,8 @@ router.get("/conversations", requireAuth, requireActiveUser, wrap(async (req, re
 
 router.get("/conversations/:id/messages", requireAuth, requireActiveUser, wrap(async (req, res) => {
   const conversationId = Number(req.params.id);
+  const afterId = Math.max(Number(req.query.afterId || 0), 0);
+  const limit = Math.min(Math.max(Number(req.query.limit || 200), 1), 200);
   if (!Number.isInteger(conversationId) || conversationId <= 0) {
     res.status(400).json({ message: "invalid conversation id" });
     return;
@@ -226,8 +228,11 @@ router.get("/conversations/:id/messages", requireAuth, requireActiveUser, wrap(a
 
   const [rows] = await pool.query<RowDataPacket[]>(
     `SELECT id, conversation_id, sender_id, type, content, created_at
-     FROM messages WHERE conversation_id = ? ORDER BY id ASC LIMIT 200`,
-    [conversationId]
+     FROM messages
+     WHERE conversation_id = ? AND id > ?
+     ORDER BY id ASC
+     LIMIT ?`,
+    [conversationId, afterId, limit]
   );
   res.json({ data: rows });
 }));

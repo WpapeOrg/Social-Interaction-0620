@@ -14,7 +14,8 @@ Page({
     messages: [],
     readTip: "",
     typingTip: "",
-    connectionTip: ""
+    connectionTip: "",
+    deliveryTip: ""
   },
   socketTask: null,
   socketReady: false,
@@ -66,7 +67,7 @@ Page({
   },
   loadMessages() {
     const conversationId = this.data.conversationId;
-    return request({ url: `/conversations/${conversationId}/messages` })
+    return request({ url: `/conversations/${conversationId}/messages?afterId=0&limit=200` })
       .then((result) => {
         const currentUserId = this.data.currentUserId;
         const messages = ((result && result.data) || []).map((item) => ({
@@ -78,11 +79,61 @@ Page({
         const lastMessage = messages[messages.length - 1];
         if (lastMessage) {
           this.markRead(lastMessage.id);
+          if (lastMessage.sender === "other") {
+            this.sendDeliveryAck(lastMessage.id);
+          }
         }
       })
       .catch(() => {
         wx.showToast({ title: "消息加载失败", icon: "none" });
       });
+  },
+  getLastMessageId() {
+    const messages = this.data.messages || [];
+    const lastMessage = messages[messages.length - 1];
+    return Number(lastMessage?.id || 0);
+  },
+  mergeIncomingMessages(incomingRows) {
+    if (!Array.isArray(incomingRows) || incomingRows.length === 0) return [];
+    const existingIdSet = new Set((this.data.messages || []).map((item) => Number(item.id)));
+    const currentUserId = this.data.currentUserId;
+    const newMessages = incomingRows
+      .filter((item) => !existingIdSet.has(Number(item.id)))
+      .map((item) => ({
+        id: item.id,
+        sender: Number(item.sender_id) === currentUserId ? "me" : "other",
+        content: item.content
+      }));
+    if (newMessages.length > 0) {
+      this.setData({
+        messages: this.data.messages.concat(newMessages)
+      });
+    }
+    return newMessages;
+  },
+  syncMissedMessages() {
+    const conversationId = this.data.conversationId;
+    let afterId = this.getLastMessageId();
+    const pullOnce = () =>
+      request({
+        url: `/conversations/${conversationId}/messages?afterId=${afterId}&limit=200`
+      }).then((result) => {
+        const rows = (result && result.data) || [];
+        const appended = this.mergeIncomingMessages(rows);
+        const lastAppended = appended[appended.length - 1];
+        if (lastAppended) {
+          afterId = Number(lastAppended.id || afterId);
+          if (lastAppended.sender === "other") {
+            this.sendDeliveryAck(afterId);
+            this.markRead(afterId);
+          }
+        }
+        if (rows.length === 200) {
+          return pullOnce();
+        }
+        return null;
+      });
+    return pullOnce().catch(() => {});
   },
   connectRealtime() {
     const app = getApp();
@@ -101,6 +152,7 @@ Page({
       this.reconnectAttempts = 0;
       this.setData({ connectionTip: "" });
       this.startPing();
+      this.syncMissedMessages();
     });
 
     socketTask.onMessage((event) => {
@@ -128,6 +180,7 @@ Page({
           const messages = this.data.messages.concat(message);
           this.setData({ messages });
           if (message.sender === "other") {
+            this.sendDeliveryAck(Number(message.id || 0));
             this.markRead(Number(message.id || 0));
           }
         }
@@ -143,6 +196,12 @@ Page({
         const isTyping = Boolean(payload.isTyping);
         this.setData({
           typingTip: isTyping ? "对方正在输入..." : ""
+        });
+      }
+
+      if (payload.type === "delivery_receipt" && Number(payload.conversationId) === this.data.conversationId) {
+        this.setData({
+          deliveryTip: `消息已送达对方（#${payload.messageId || 0}）`
         });
       }
     });
@@ -282,6 +341,14 @@ Page({
       method: "POST",
       data: { lastReadMessageId }
     }).catch(() => {});
+  },
+  sendDeliveryAck(messageId) {
+    if (!messageId) return;
+    this.sendRealtime({
+      type: "delivered",
+      conversationId: this.data.conversationId,
+      messageId
+    });
   },
   onReportTap() {
     wx.showModal({
