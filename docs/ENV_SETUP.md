@@ -43,6 +43,8 @@ mysql -h 127.0.0.1 -P 3306 -u social_user -psocial_pass social_interaction < sql
 mysql -h 127.0.0.1 -P 3306 -u social_user -psocial_pass social_interaction < sql/realtime_migration_003.sql
 mysql -h 127.0.0.1 -P 3306 -u social_user -psocial_pass social_interaction < sql/realtime_migration_004.sql
 mysql -h 127.0.0.1 -P 3306 -u social_user -psocial_pass social_interaction < sql/realtime_migration_005.sql
+mysql -h 127.0.0.1 -P 3306 -u social_user -psocial_pass social_interaction < sql/realtime_migration_006.sql
+mysql -h 127.0.0.1 -P 3306 -u social_user -psocial_pass social_interaction < sql/realtime_migration_007.sql
 ```
 
 ## 5. 管理后台联调
@@ -60,6 +62,7 @@ PUSH_WX_APP_ID=<your-app-id>
 PUSH_WX_APP_SECRET=<your-app-secret>
 PUSH_WX_TEMPLATE_ID=<your-template-id>
 PUSH_WX_CALLBACK_TOKEN=<your-callback-token>
+PUSH_WX_CALLBACK_AES_KEY=<your-43-char-aes-key>
 ```
 
 然后启动后端即可内嵌运行通知 Worker，或单独执行：
@@ -74,6 +77,8 @@ npm run worker
 ```bash
 GET/POST http://<your-domain>/wechat/push/callback
 ```
+
+安全模式下微信会携带 `msg_signature`，后端会执行 SHA1 签名校验与 AES 解密。
 
 ## 7. 小程序导入
 - 小程序目录：`miniprogram/`

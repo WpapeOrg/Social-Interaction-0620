@@ -112,16 +112,34 @@ CREATE TABLE IF NOT EXISTS notification_tasks (
   status VARCHAR(16) NOT NULL DEFAULT 'pending',
   retry_count INT NOT NULL DEFAULT 0,
   max_retries INT NOT NULL DEFAULT 5,
+  provider_msg_id VARCHAR(64) NULL,
+  provider_trace_id VARCHAR(64) NULL,
+  callback_status VARCHAR(64) NULL,
+  callback_at TIMESTAMP NULL,
   error_message VARCHAR(255) NULL,
   scheduled_at TIMESTAMP NULL,
   sent_at TIMESTAMP NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   KEY idx_notification_tasks_user_status (user_id, status),
+  KEY idx_notification_tasks_provider_msg (provider_msg_id),
   KEY idx_notification_tasks_created (created_at),
   CONSTRAINT fk_notification_tasks_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   CONSTRAINT fk_notification_tasks_conversation FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE SET NULL,
   CONSTRAINT fk_notification_tasks_message FOREIGN KEY (message_id) REFERENCES messages(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS notification_callback_events (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  event_id VARCHAR(64) NOT NULL UNIQUE,
+  event_type VARCHAR(64) NOT NULL,
+  event_status VARCHAR(64) NULL,
+  from_user_openid VARCHAR(64) NULL,
+  msg_id VARCHAR(64) NULL,
+  payload_xml TEXT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_notification_callback_event_type (event_type),
+  KEY idx_notification_callback_msg_id (msg_id)
 );
 
 CREATE TABLE IF NOT EXISTS reports (

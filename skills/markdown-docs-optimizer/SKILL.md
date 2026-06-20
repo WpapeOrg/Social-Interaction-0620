@@ -16,7 +16,7 @@ Use README as the entry point and move detailed content into dedicated docs.
 2. Scan heading structure with `rg -n '^#|^##|^###' README.md docs/*.md CHANGELOG.md`.
 3. Assign canonical topic owners before adding text.
 4. Move long sections to dedicated docs and replace README content with links.
-5. Add or update `CHANGELOG.md` for visible documentation restructuring.
+5. Before each commit, append what changed in `CHANGELOG.md` (features/docs sections as applicable).
 6. Validate links and heading consistency before finishing.
 
 ## Canonical Ownership

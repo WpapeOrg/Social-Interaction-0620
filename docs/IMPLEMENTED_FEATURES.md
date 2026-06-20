@@ -23,6 +23,8 @@
 - 我的页新增“消息通知”开关，支持总开关/私聊提醒/匹配提醒保存。
 - 后端新增通知任务消费 Worker，支持指数退避重试与死信状态。
 - 推送通道已对接微信订阅消息真实发送，并提供回调签名校验接口。
+- 微信回调已支持 AES 解密与幂等入库（防重复处理）。
+- 微信回调事件可按 `provider_msg_id` 精确回写通知任务状态（sent/failed）。
 - 全局深色霓虹风格设计系统与基础动效。
 
 ## 2. 后端 API（MVP）
@@ -56,6 +58,8 @@
 - `GET /wechat/push/callback`
 - `POST /wechat/push/callback`
 - 通知任务 Worker：`backend/src/notification-worker.ts`
+- 回调落库：`notification_callback_events`
+- 回调状态回写：`notification_tasks.provider_msg_id`、`callback_status`、`callback_at`
 
 ### 2.6 管理后台 API
 - `GET /admin/reports`
@@ -77,6 +81,8 @@
   - `backend/sql/admin_migration_001.sql`
   - `backend/sql/realtime_migration_004.sql`
   - `backend/sql/realtime_migration_005.sql`
+  - `backend/sql/realtime_migration_006.sql`
+  - `backend/sql/realtime_migration_007.sql`
 
 ## 5. 未实现功能（当前边界）
 

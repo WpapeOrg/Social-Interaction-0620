@@ -104,11 +104,12 @@ async function deliverTask(task: NotificationTask): Promise<void> {
   }
 
   try {
-    await sendWechatSubscribeMessage({
+    const sendAck = await sendWechatSubscribeMessage({
       userId: task.userId,
       title: task.title,
       content: task.content
     });
+    await handleTaskSuccess(task.id, sendAck.msgId, sendAck.traceId);
   } catch (error) {
     if (error instanceof WechatPushError && error.permanent) {
       throw new PermanentDeliveryError(error.message);
@@ -122,15 +123,21 @@ function calcNextRetryDelayMs(nextRetryCount: number): number {
   return Math.min(delay, config.push.backoffMaxMs);
 }
 
-async function handleTaskSuccess(taskId: number): Promise<void> {
+async function handleTaskSuccess(
+  taskId: number,
+  providerMsgId: string | null = null,
+  providerTraceId: string | null = null
+): Promise<void> {
   await pool.query(
     `UPDATE notification_tasks
      SET status = 'sent',
+         provider_msg_id = COALESCE(?, provider_msg_id),
+         provider_trace_id = COALESCE(?, provider_trace_id),
          sent_at = CURRENT_TIMESTAMP,
          error_message = NULL,
          updated_at = CURRENT_TIMESTAMP
      WHERE id = ?`,
-    [taskId]
+    [providerMsgId, providerTraceId, taskId]
   );
 }
 
@@ -171,7 +178,9 @@ async function handleTaskFailure(task: NotificationTask, error: unknown): Promis
 async function processTask(task: NotificationTask): Promise<void> {
   try {
     await deliverTask(task);
-    await handleTaskSuccess(task.id);
+    if (config.push.mockMode) {
+      await handleTaskSuccess(task.id);
+    }
   } catch (error) {
     await handleTaskFailure(task, error);
   }

@@ -143,7 +143,10 @@
   - `status`：可选，`pending` / `processing` / `sent` / `failed` / `dead`
   - `limit`：可选，默认 50，最大 200
 - 说明：查询当前用户通知任务（用于联调验证离线推送任务入库与重试状态）。
-- 返回字段补充：`retry_count`、`max_retries` 可用于观察重试次数与死信阈值。
+- 返回字段补充：
+  - `retry_count`、`max_retries`：观察重试次数与死信阈值。
+  - `provider_msg_id`、`provider_trace_id`：微信推送通道返回标识。
+  - `callback_status`、`callback_at`：微信回调同步状态与时间。
 
 ### `PATCH /notifications/tasks/{id}`
 - 鉴权：用户鉴权
@@ -162,18 +165,36 @@
 - 鉴权：否（微信服务端签名校验）
 - Query 参数：
   - `signature`
+  - `msg_signature`（安全模式）
   - `timestamp`
   - `nonce`
   - `echostr`
-- 说明：用于微信服务器配置阶段的 URL 校验，签名通过后原样返回 `echostr`。
+- 说明：
+  - 明文模式：校验 `signature`，通过后原样返回 `echostr`。
+  - 安全模式：校验 `msg_signature`，通过后解密 `echostr` 并返回明文。
 
 ### `POST /wechat/push/callback`
 - 鉴权：否（微信服务端签名校验）
 - Query 参数：
   - `signature`
+  - `msg_signature`（安全模式）
   - `timestamp`
   - `nonce`
-- 说明：用于接收微信推送回调请求，当前版本仅做签名校验与应答。
+- 说明：
+  - 支持明文与安全模式（AES 解密）。
+  - 回调消息按 `event_id` 去重后写入 `notification_callback_events`（幂等入库）。
+  - 返回示例：
+```json
+{
+  "message": "success",
+  "data": {
+    "eventId": "sha1_event_id",
+    "inserted": true,
+    "taskSynced": true,
+    "taskId": 123
+  }
+}
+```
 
 ## 6. 安全与关系
 
