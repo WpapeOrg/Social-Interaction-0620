@@ -1,0 +1,20 @@
+<view class="container">
+  <view class="hero motion-enter">
+    <view class="hero-title">个人名片</view>
+    <view class="hero-subtitle">资料越完整，匹配质量越高。</view>
+  </view>
+  <view class="card motion-enter delay-1 stack-12">
+    <view class="card-title">完善资料</view>
+    <input placeholder="昵称" bindinput="onInputNickname" value="{{nickname}}" />
+    <input placeholder="城市" bindinput="onInputCity" value="{{city}}" />
+    <textarea placeholder="个性签名" bindinput="onInputBio" value="{{bio}}" />
+    <view>
+      <view class="chip chip-active">运动</view>
+      <view class="chip">摄影</view>
+      <view class="chip">旅行</view>
+      <view class="chip">二次元</view>
+    </view>
+    <view class="text-xs muted">建议补充兴趣标签，提升推荐准确率。</view>
+  </view>
+  <button class="btn-primary motion-enter delay-2" bindtap="onSubmit">保存资料</button>
+</view>
