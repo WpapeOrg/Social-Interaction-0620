@@ -12,6 +12,7 @@
 - 本项目当前依赖在 `Node.js 20.19.x + npm 10.9.2` 组合下验证稳定。
 - `npm 11.13.0` 可能出现 `Exit handler never called!`（npm CLI 自身异常）。
 - 仓库根目录已提供 `.nvmrc` 与 `.npmrc`，可用于团队统一版本与安装约束。
+- 仓库根目录 `.npmrc` 已配置 `registry=https://registry.npmmirror.com/`，避免依赖京东源导致安装失败。
 
 快速对齐本地版本：
 
@@ -29,6 +30,10 @@ npm -v
 docker compose up -d
 docker compose ps
 ```
+
+说明：
+- `docker-compose.yml` 已将基础镜像切换为 `docker.m.daocloud.io`，便于国内网络环境拉取。
+- 若本机仍无法拉取镜像，优先检查 Docker Desktop 是否已启动（`docker info`）。
 
 ## 3. 启动后端服务
 

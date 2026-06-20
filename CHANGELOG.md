@@ -27,3 +27,4 @@
 - **Node/npm 推荐版本补充**：在 `README.md` 与 `docs/ENV_SETUP.md` 增加推荐版本（Node 20 LTS + npm 10）及 `npm 11.13.0` 报错排查指引。
 - **Node/npm 版本收敛**：将推荐版本明确为 `Node.js 20.19.x + npm 10.9.2`，并在 `backend/package.json` 增加 `engines` 约束。
 - **版本对齐文件补充**：新增根目录 `.nvmrc`（`20.19.0`）与 `.npmrc`（`engine-strict=true`），并在环境文档补充对齐使用方式。
+- **镜像源替换**：将 `backend/package-lock.json` 的依赖下载源从 `registry.m.jd.com` 统一替换为 `registry.npmmirror.com`，并将 `docker-compose.yml` 的镜像源替换为国内可访问地址。

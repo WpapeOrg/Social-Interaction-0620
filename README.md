@@ -17,6 +17,7 @@
 ## 快速开始
 推荐本地版本：`Node.js 20 LTS（建议 20.19.x）` + `npm 10.9.2`。  
 已知问题：`npm 11.13.0` 在本项目中可能出现 `Exit handler never called!`。
+仓库已内置镜像配置：`npm` 默认使用 `https://registry.npmmirror.com/`，`docker-compose` 使用国内可访问镜像地址。
 
 ```bash
 docker compose up -d
