@@ -1,0 +1,15 @@
+<view class="container">
+  <view class="hero motion-enter">
+    <view class="hero-title">最近会话</view>
+    <view class="hero-subtitle">快速回到上次聊天位置</view>
+  </view>
+  <block wx:for="{{conversations}}" wx:key="id">
+    <view class="card motion-enter delay-1" data-id="{{item.id}}" bindtap="toDetail">
+      <view class="row-between">
+        <view class="session-title">{{item.title}}</view>
+        <view class="chip">未读 1</view>
+      </view>
+      <view class="muted">{{item.lastMessage}}</view>
+    </view>
+  </block>
+</view>
