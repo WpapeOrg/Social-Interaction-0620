@@ -10,6 +10,8 @@
 - **通知任务结构升级**：新增 `backend/sql/realtime_migration_005.sql`，补齐 `retry_count`、`max_retries` 字段。
 - **微信订阅消息真实投递**：新增微信推送适配器，任务消费从 mock 切换为可配置的微信订阅消息发送。
 - **回调签名校验接口**：新增 `/wechat/push/callback` GET/POST 接口并校验微信 `signature`。
+- **回调安全模式增强**：新增 `msg_signature` 校验与 AES 解密，支持微信安全模式回调处理。
+- **回调幂等入库**：新增 `notification_callback_events` 表，按 `event_id` 去重保存回调消息。
 
 ### Documentation
 - **文档结构重构**：将 README 调整为项目入口，新增并拆分详细文档到 `docs/`，避免重复内容。

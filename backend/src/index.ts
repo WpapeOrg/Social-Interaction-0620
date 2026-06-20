@@ -12,6 +12,7 @@ const port = config.port;
 
 app.use(helmet());
 app.use(cors());
+app.use(express.text({ type: ["application/xml", "text/xml"] }));
 app.use(express.json());
 app.use(morgan("dev"));
 

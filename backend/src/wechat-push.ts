@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { RowDataPacket } from "mysql2";
+import { ResultSetHeader, RowDataPacket } from "mysql2";
 import { config } from "./config";
 import { pool } from "./db";
 
@@ -14,6 +14,8 @@ type WechatSendResult = {
   errcode?: number;
   errmsg?: string;
 };
+
+type WechatXmlMap = Record<string, string>;
 
 export class WechatPushError extends Error {
   permanent: boolean;
@@ -168,4 +170,119 @@ export function verifyWechatCallbackSignature(params: {
   const plain = [token, params.timestamp, params.nonce].sort().join("");
   const digest = crypto.createHash("sha1").update(plain).digest("hex");
   return digest === params.signature;
+}
+
+export function verifyWechatMessageSignature(params: {
+  msgSignature: string;
+  timestamp: string;
+  nonce: string;
+  encrypted: string;
+}): boolean {
+  const token = String(config.push.wxCallbackToken || "").trim();
+  if (!token) return false;
+  const plain = [token, params.timestamp, params.nonce, params.encrypted].sort().join("");
+  const digest = crypto.createHash("sha1").update(plain).digest("hex");
+  return digest === params.msgSignature;
+}
+
+export function parseWechatXml(xmlText: string): WechatXmlMap {
+  const xml = String(xmlText || "");
+  const output: WechatXmlMap = {};
+  const cdataPattern = /<([A-Za-z0-9_]+)><!\[CDATA\[([\s\S]*?)\]\]><\/\1>/g;
+  const textPattern = /<([A-Za-z0-9_]+)>([^<]+)<\/\1>/g;
+  let match: RegExpExecArray | null;
+
+  while ((match = cdataPattern.exec(xml))) {
+    output[match[1]] = String(match[2] || "").trim();
+  }
+  while ((match = textPattern.exec(xml))) {
+    if (output[match[1]] !== undefined) continue;
+    output[match[1]] = String(match[2] || "").trim();
+  }
+  return output;
+}
+
+function decodePkcs7(data: Buffer): Buffer {
+  if (data.length === 0) {
+    throw new WechatPushError("wechat decrypt empty data", true);
+  }
+  const pad = data[data.length - 1];
+  if (pad < 1 || pad > 32) {
+    return data;
+  }
+  return data.subarray(0, data.length - pad);
+}
+
+function getWechatAesKey(): Buffer {
+  const aesKey = String(config.push.wxCallbackAesKey || "").trim();
+  if (!aesKey) {
+    throw new WechatPushError("wechat callback aes key missing", true);
+  }
+  const buffer = Buffer.from(`${aesKey}=`, "base64");
+  if (buffer.length !== 32) {
+    throw new WechatPushError("wechat callback aes key invalid", true);
+  }
+  return buffer;
+}
+
+export function decryptWechatCallbackEncryptedText(encryptedText: string): string {
+  const aesKey = getWechatAesKey();
+  const iv = aesKey.subarray(0, 16);
+  const encrypted = Buffer.from(String(encryptedText || ""), "base64");
+  if (encrypted.length === 0) {
+    throw new WechatPushError("wechat encrypted payload invalid", true);
+  }
+  const decipher = crypto.createDecipheriv("aes-256-cbc", aesKey, iv);
+  decipher.setAutoPadding(false);
+  const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
+  const plain = decodePkcs7(decrypted);
+  if (plain.length < 20) {
+    throw new WechatPushError("wechat decrypted payload too short", true);
+  }
+  const msgLength = plain.readUInt32BE(16);
+  const msgStart = 20;
+  const msgEnd = msgStart + msgLength;
+  if (plain.length < msgEnd) {
+    throw new WechatPushError("wechat decrypted payload length mismatch", true);
+  }
+  const xmlText = plain.subarray(msgStart, msgEnd).toString("utf8");
+  const fromAppId = plain.subarray(msgEnd).toString("utf8").trim();
+  if (fromAppId && config.push.wxAppId && fromAppId !== config.push.wxAppId) {
+    throw new WechatPushError("wechat callback appid mismatch", true);
+  }
+  return xmlText;
+}
+
+function buildCallbackEventId(message: WechatXmlMap): string {
+  const msgId = message.MsgId || message.MsgID || "";
+  const fromUserName = message.FromUserName || "";
+  const createTime = message.CreateTime || "";
+  const event = message.Event || "";
+  const eventKey = message.EventKey || "";
+  const status = message.Status || "";
+  const candidate = [msgId, fromUserName, createTime, event, eventKey, status]
+    .filter((item) => item)
+    .join("|");
+  const base = candidate || JSON.stringify(message);
+  return crypto.createHash("sha1").update(base).digest("hex");
+}
+
+export async function persistWechatCallbackEvent(params: {
+  messageXml: string;
+}): Promise<{ inserted: boolean; eventId: string }> {
+  const message = parseWechatXml(params.messageXml);
+  const eventId = buildCallbackEventId(message);
+  const eventType = String(message.Event || message.MsgType || "unknown").slice(0, 64);
+  const eventStatus = String(message.Status || "").slice(0, 64) || null;
+  const fromUserOpenid = String(message.FromUserName || "").slice(0, 64) || null;
+  const msgId = String(message.MsgId || message.MsgID || "").slice(0, 64) || null;
+
+  const [result] = await pool.query<ResultSetHeader>(
+    `INSERT IGNORE INTO notification_callback_events
+     (event_id, event_type, event_status, from_user_openid, msg_id, payload_xml)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [eventId, eventType, eventStatus, fromUserOpenid, msgId, params.messageXml]
+  );
+  const inserted = Number(result.affectedRows || 0) > 0;
+  return { inserted, eventId };
 }

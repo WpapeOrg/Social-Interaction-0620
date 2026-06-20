@@ -8,7 +8,14 @@ import { requireAdmin } from "./middleware/admin";
 import { requireAuth } from "./middleware/auth";
 import { emitConversationMessage, emitReadReceipt, isUserOnline } from "./realtime";
 import { codeToOpenId } from "./utils";
-import { verifyWechatCallbackSignature } from "./wechat-push";
+import {
+  decryptWechatCallbackEncryptedText,
+  parseWechatXml,
+  persistWechatCallbackEvent,
+  verifyWechatCallbackSignature,
+  verifyWechatMessageSignature,
+  WechatPushError
+} from "./wechat-push";
 
 const router = Router();
 const wrap = (handler: RequestHandler): RequestHandler => (req, res, next) => {
@@ -131,27 +138,95 @@ router.post("/auth/wx-login", wrap(async (req, res) => {
 
 router.get("/wechat/push/callback", wrap(async (req, res) => {
   const signature = String(req.query.signature || "");
+  const msgSignature = String(req.query.msg_signature || "");
   const timestamp = String(req.query.timestamp || "");
   const nonce = String(req.query.nonce || "");
   const echoStr = String(req.query.echostr || "");
-  const passed = verifyWechatCallbackSignature({ signature, timestamp, nonce });
-  if (!passed) {
-    res.status(401).send("signature invalid");
+  if (msgSignature && echoStr) {
+    const passed = verifyWechatMessageSignature({
+      msgSignature,
+      timestamp,
+      nonce,
+      encrypted: echoStr
+    });
+    if (!passed) {
+      res.status(401).send("signature invalid");
+      return;
+    }
+    try {
+      const plainEcho = decryptWechatCallbackEncryptedText(echoStr);
+      res.type("text/plain").send(plainEcho || "ok");
+      return;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "decrypt failed";
+      res.status(400).send(message);
+      return;
+    }
+  } else {
+    const passed = verifyWechatCallbackSignature({ signature, timestamp, nonce });
+    if (!passed) {
+      res.status(401).send("signature invalid");
+      return;
+    }
+    res.type("text/plain").send(echoStr || "ok");
     return;
   }
-  res.type("text/plain").send(echoStr || "ok");
 }));
 
 router.post("/wechat/push/callback", wrap(async (req, res) => {
   const signature = String(req.query.signature || "");
+  const msgSignature = String(req.query.msg_signature || "");
   const timestamp = String(req.query.timestamp || "");
   const nonce = String(req.query.nonce || "");
-  const passed = verifyWechatCallbackSignature({ signature, timestamp, nonce });
-  if (!passed) {
-    res.status(401).json({ message: "signature invalid" });
+  const rawBody = typeof req.body === "string" ? req.body : "";
+  if (!rawBody) {
+    res.status(400).json({ message: "empty callback body" });
     return;
   }
-  res.json({ message: "success" });
+
+  let messageXml = rawBody;
+  const rootMessage = parseWechatXml(rawBody);
+  const encrypted = String(rootMessage.Encrypt || "");
+
+  if (encrypted) {
+    const passed = verifyWechatMessageSignature({
+      msgSignature,
+      timestamp,
+      nonce,
+      encrypted
+    });
+    if (!passed) {
+      res.status(401).json({ message: "signature invalid" });
+      return;
+    }
+    try {
+      messageXml = decryptWechatCallbackEncryptedText(encrypted);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "decrypt failed";
+      res.status(400).json({ message });
+      return;
+    }
+  } else {
+    const passed = verifyWechatCallbackSignature({ signature, timestamp, nonce });
+    if (!passed) {
+      res.status(401).json({ message: "signature invalid" });
+      return;
+    }
+  }
+
+  try {
+    const result = await persistWechatCallbackEvent({ messageXml });
+    res.json({
+      message: "success",
+      data: { eventId: result.eventId, inserted: result.inserted }
+    });
+  } catch (error) {
+    if (error instanceof WechatPushError) {
+      res.status(400).json({ message: error.message });
+      return;
+    }
+    throw error;
+  }
 }));
 
 router.get("/profile/me", requireAuth, wrap(async (req, res) => {
