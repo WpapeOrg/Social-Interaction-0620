@@ -21,6 +21,7 @@
 - 聊天页接入消息送达确认（delivery receipt）提示。
 - 聊天页支持同账号多设备状态同步（消息、已读、送达）。
 - 我的页新增“消息通知”开关，支持总开关/私聊提醒/匹配提醒保存。
+- 后端新增通知任务消费 Worker，支持指数退避重试与死信状态。
 - 全局深色霓虹风格设计系统与基础动效。
 
 ## 2. 后端 API（MVP）
@@ -51,6 +52,7 @@
 - `PUT /notifications/settings`
 - `GET /notifications/tasks`
 - `PATCH /notifications/tasks/{id}`
+- 通知任务 Worker：`backend/src/notification-worker.ts`
 
 ### 2.6 管理后台 API
 - `GET /admin/reports`
@@ -71,6 +73,7 @@
   - `backend/sql/init.sql`
   - `backend/sql/admin_migration_001.sql`
   - `backend/sql/realtime_migration_004.sql`
+  - `backend/sql/realtime_migration_005.sql`
 
 ## 5. 未实现功能（当前边界）
 

@@ -140,9 +140,10 @@
 ### `GET /notifications/tasks`
 - 鉴权：用户鉴权
 - Query 参数：
-  - `status`：可选，`pending` / `sent` / `failed`
+  - `status`：可选，`pending` / `processing` / `sent` / `failed` / `dead`
   - `limit`：可选，默认 50，最大 200
-- 说明：查询当前用户通知任务（用于联调验证离线推送任务入库）。
+- 说明：查询当前用户通知任务（用于联调验证离线推送任务入库与重试状态）。
+- 返回字段补充：`retry_count`、`max_retries` 可用于观察重试次数与死信阈值。
 
 ### `PATCH /notifications/tasks/{id}`
 - 鉴权：用户鉴权
@@ -153,7 +154,7 @@
   "errorMessage": ""
 }
 ```
-- `status`：`pending` / `sent` / `failed`
+- `status`：`pending` / `sent` / `failed` / `dead`
 
 ## 5. 安全与关系
 

@@ -42,13 +42,29 @@ curl http://localhost:3000/health
 mysql -h 127.0.0.1 -P 3306 -u social_user -psocial_pass social_interaction < sql/realtime_migration_002.sql
 mysql -h 127.0.0.1 -P 3306 -u social_user -psocial_pass social_interaction < sql/realtime_migration_003.sql
 mysql -h 127.0.0.1 -P 3306 -u social_user -psocial_pass social_interaction < sql/realtime_migration_004.sql
+mysql -h 127.0.0.1 -P 3306 -u social_user -psocial_pass social_interaction < sql/realtime_migration_005.sql
 ```
 
 ## 5. 管理后台联调
 
 管理页说明请见 [管理后台使用说明](ADMIN_PANEL.md)。
 
-## 6. 小程序导入
+## 6. 通知 Worker 启动
+
+在 `backend/.env` 中开启：
+
+```bash
+PUSH_WORKER_ENABLED=true
+```
+
+然后启动后端即可内嵌运行通知 Worker，或单独执行：
+
+```bash
+cd backend
+npm run worker
+```
+
+## 7. 小程序导入
 - 小程序目录：`miniprogram/`
 - 在微信开发者工具中导入该目录即可。
 
