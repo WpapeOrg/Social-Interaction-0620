@@ -1,0 +1,38 @@
+{
+  "pages": [
+    "pages/login/index",
+    "pages/profile/edit",
+    "pages/recommend/list",
+    "pages/chat/list",
+    "pages/chat/detail",
+    "pages/me/index"
+  ],
+  "tabBar": {
+    "color": "#8b93a7",
+    "selectedColor": "#3bd4ff",
+    "backgroundColor": "#0b1220",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/recommend/list",
+        "text": "推荐"
+      },
+      {
+        "pagePath": "pages/chat/list",
+        "text": "会话"
+      },
+      {
+        "pagePath": "pages/me/index",
+        "text": "我的"
+      }
+    ]
+  },
+  "window": {
+    "navigationBarTitleText": "扩列星球",
+    "navigationBarBackgroundColor": "#0b1220",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#050912"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}
