@@ -1,0 +1,14 @@
+<view class="container">
+  <view class="hero motion-enter">
+    <view class="hero-title">扩列星球</view>
+    <view class="hero-subtitle">Match, chat, and vibe with new friends.</view>
+  </view>
+  <view class="card motion-enter delay-1 stack-8">
+    <view class="card-title">极速开启扩列</view>
+    <view class="card-subtitle">使用微信登录，30秒完成注册并开始推荐匹配。</view>
+    <view class="chip chip-active">新用户首日推荐加权</view>
+  </view>
+  <button class="btn-primary motion-enter delay-2" loading="{{loading}}" bindtap="onLoginTap">
+    微信一键登录
+  </button>
+</view>
