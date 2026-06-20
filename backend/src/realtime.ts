@@ -14,6 +14,16 @@ type SocketWithUser = WebSocket & {
   userId?: number;
 };
 
+type ClientEvent =
+  | {
+      type: "typing";
+      conversationId: number;
+      isTyping: boolean;
+    }
+  | {
+      type: "ping";
+    };
+
 const userSocketMap = new Map<number, Set<SocketWithUser>>();
 
 function addUserSocket(userId: number, socket: SocketWithUser): void {
@@ -57,6 +67,18 @@ async function getConversationParticipants(conversationId: number): Promise<numb
   return [Number(rows[0].user_a), Number(rows[0].user_b)];
 }
 
+async function canAccessConversation(userId: number, conversationId: number): Promise<boolean> {
+  const [rows] = await pool.query<RowDataPacket[]>(
+    `SELECT c.id
+     FROM conversations c
+     JOIN matches m ON m.id = c.match_id
+     WHERE c.id = ? AND m.status = 'active' AND (m.user_a = ? OR m.user_b = ?)
+     LIMIT 1`,
+    [conversationId, userId, userId]
+  );
+  return Boolean(rows[0]);
+}
+
 async function isActiveUser(userId: number): Promise<boolean> {
   const [rows] = await pool.query<RowDataPacket[]>(
     "SELECT status FROM users WHERE id = ? LIMIT 1",
@@ -98,6 +120,46 @@ export async function emitReadReceipt(
   });
 }
 
+async function emitTypingStatus(
+  conversationId: number,
+  senderId: number,
+  isTyping: boolean
+): Promise<void> {
+  const participants = await getConversationParticipants(conversationId);
+  const receiverIds = participants.filter((userId) => userId !== senderId);
+  if (receiverIds.length === 0) return;
+  emitToUsers(receiverIds, {
+    type: "typing_status",
+    conversationId,
+    senderId,
+    isTyping
+  });
+}
+
+async function handleSocketMessage(socket: SocketWithUser, rawData: Buffer): Promise<void> {
+  if (!socket.userId) return;
+  let event: ClientEvent;
+  try {
+    event = JSON.parse(rawData.toString()) as ClientEvent;
+  } catch (_error) {
+    return;
+  }
+
+  if (event.type === "ping") {
+    socket.send(JSON.stringify({ type: "pong" }));
+    return;
+  }
+
+  if (event.type === "typing") {
+    const conversationId = Number(event.conversationId);
+    const isTyping = Boolean(event.isTyping);
+    if (!Number.isInteger(conversationId) || conversationId <= 0) return;
+    const allowed = await canAccessConversation(socket.userId, conversationId);
+    if (!allowed) return;
+    await emitTypingStatus(conversationId, socket.userId, isTyping);
+  }
+}
+
 export function registerRealtimeGateway(server: Server): void {
   const wsServer = new WebSocketServer({ server, path: "/ws" });
   wsServer.on("connection", async (socket: SocketWithUser, request) => {
@@ -125,6 +187,10 @@ export function registerRealtimeGateway(server: Server): void {
           userId: payload.userId
         })
       );
+
+      socket.on("message", async (rawData: Buffer) => {
+        await handleSocketMessage(socket, rawData);
+      });
 
       socket.on("close", () => {
         if (!socket.userId) return;

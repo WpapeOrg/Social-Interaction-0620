@@ -12,3 +12,9 @@ input {
 .report-btn {
   margin-top: 14rpx;
 }
+
+.typing-tip {
+  margin-top: 6rpx;
+  color: #9ef0ff;
+  font-size: 22rpx;
+}

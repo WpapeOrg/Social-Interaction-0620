@@ -12,18 +12,37 @@ Page({
     currentUserId: 0,
     inputValue: "",
     messages: [],
-    readTip: ""
+    readTip: "",
+    typingTip: "",
+    connectionTip: ""
   },
   socketTask: null,
+  socketReady: false,
+  manualClose: false,
+  reconnectAttempts: 0,
+  reconnectTimer: null,
+  pingTimer: null,
+  typingStopTimer: null,
+  typingLastEmitAt: 0,
+  typingState: false,
   onLoad(options) {
     const conversationId = Number(options.id || 0);
     this.setData({ conversationId });
     this.bootstrap();
   },
+  onShow() {
+    this.manualClose = false;
+    if (!this.socketTask) {
+      this.connectRealtime();
+    }
+  },
   onUnload() {
+    this.manualClose = true;
     this.teardownSocket();
   },
   onHide() {
+    this.manualClose = true;
+    this.sendTypingState(false, true);
     this.teardownSocket();
   },
   async bootstrap() {
@@ -72,14 +91,27 @@ Page({
     if (!url) return;
 
     this.teardownSocket();
+    this.setData({ connectionTip: "连接中..." });
     const socketTask = wx.connectSocket({ url });
     this.socketTask = socketTask;
+    this.socketReady = false;
+
+    socketTask.onOpen(() => {
+      this.socketReady = true;
+      this.reconnectAttempts = 0;
+      this.setData({ connectionTip: "" });
+      this.startPing();
+    });
 
     socketTask.onMessage((event) => {
       let payload;
       try {
         payload = JSON.parse(event.data);
       } catch (_error) {
+        return;
+      }
+
+      if (payload.type === "connected" || payload.type === "pong") {
         return;
       }
 
@@ -106,9 +138,88 @@ Page({
           readTip: `对方已读至消息 #${payload.lastReadMessageId || 0}`
         });
       }
+
+      if (payload.type === "typing_status" && Number(payload.conversationId) === this.data.conversationId) {
+        const isTyping = Boolean(payload.isTyping);
+        this.setData({
+          typingTip: isTyping ? "对方正在输入..." : ""
+        });
+      }
+    });
+
+    socketTask.onClose(() => {
+      this.socketReady = false;
+      this.stopPing();
+      this.socketTask = null;
+      this.scheduleReconnect();
+    });
+
+    socketTask.onError(() => {
+      this.socketReady = false;
+      this.stopPing();
+      this.setData({ connectionTip: "连接异常，重试中..." });
+    });
+  },
+  scheduleReconnect() {
+    if (this.manualClose) return;
+    this.reconnectAttempts += 1;
+    const delay = Math.min(10000, 1000 * Math.pow(2, this.reconnectAttempts - 1));
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+    this.setData({ connectionTip: `连接断开，${Math.floor(delay / 1000)} 秒后重连...` });
+    this.reconnectTimer = setTimeout(() => {
+      this.connectRealtime();
+    }, delay);
+  },
+  startPing() {
+    this.stopPing();
+    this.pingTimer = setInterval(() => {
+      this.sendRealtime({ type: "ping" });
+    }, 20000);
+  },
+  stopPing() {
+    if (!this.pingTimer) return;
+    clearInterval(this.pingTimer);
+    this.pingTimer = null;
+  },
+  sendRealtime(payload) {
+    if (!this.socketTask || !this.socketReady) return;
+    try {
+      this.socketTask.send({
+        data: JSON.stringify(payload)
+      });
+    } catch (_error) {
+      // ignore send failures
+    }
+  },
+  sendTypingState(isTyping, force = false) {
+    const now = Date.now();
+    if (!force && isTyping && now - this.typingLastEmitAt < 1200) {
+      return;
+    }
+    if (!force && this.typingState === isTyping) {
+      return;
+    }
+    this.typingState = isTyping;
+    this.typingLastEmitAt = now;
+    this.sendRealtime({
+      type: "typing",
+      conversationId: this.data.conversationId,
+      isTyping
     });
   },
   teardownSocket() {
+    this.stopPing();
+    if (this.typingStopTimer) {
+      clearTimeout(this.typingStopTimer);
+      this.typingStopTimer = null;
+    }
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
     if (!this.socketTask) return;
     try {
       this.socketTask.close();
@@ -116,9 +227,22 @@ Page({
       // ignore close errors
     }
     this.socketTask = null;
+    this.socketReady = false;
   },
   onInput(e) {
-    this.setData({ inputValue: e.detail.value });
+    const inputValue = e.detail.value;
+    this.setData({ inputValue });
+    const hasText = inputValue.trim().length > 0;
+    this.sendTypingState(hasText);
+    if (this.typingStopTimer) {
+      clearTimeout(this.typingStopTimer);
+      this.typingStopTimer = null;
+    }
+    if (hasText) {
+      this.typingStopTimer = setTimeout(() => {
+        this.sendTypingState(false, true);
+      }, 3000);
+    }
   },
   onSend() {
     const conversationId = this.data.conversationId;
@@ -143,6 +267,7 @@ Page({
             })
           });
         }
+        this.sendTypingState(false, true);
         this.setData({ inputValue: "" });
       })
       .catch(() => {

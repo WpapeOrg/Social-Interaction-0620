@@ -8,6 +8,9 @@
 - 用户鉴权 Header：`Authorization: Bearer <your-token>`
 - 管理鉴权 Header：`x-admin-key: <your-admin-key>`
 - WebSocket：`ws://localhost:3000/ws?token=<url-encoded-bearer-token>`
+- WebSocket 客户端事件：
+  - `typing`：上报输入中状态 `{ type, conversationId, isTyping }`
+  - `ping`：连接保活
 
 ## 健康检查
 
@@ -174,3 +177,10 @@
 - `403`：无权限访问目标会话。
 - `404`：目标资源不存在。
 - `500`：服务内部错误。
+
+## 7. WebSocket 下行事件
+- `connected`：连接建立成功。
+- `new_message`：新消息推送。
+- `read_receipt`：对方已读回执。
+- `typing_status`：对方输入状态变化。
+- `pong`：服务端心跳应答。
