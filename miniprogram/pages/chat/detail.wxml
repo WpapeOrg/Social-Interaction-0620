@@ -2,6 +2,7 @@
   <view class="hero motion-enter">
     <view class="hero-title">正在聊天</view>
     <view class="hero-subtitle">保持友善，遇到问题可及时举报。</view>
+    <button size="mini" class="btn-secondary report-btn" bindtap="onReportTap">举报</button>
   </view>
   <block wx:for="{{messages}}" wx:key="id">
     <view class="{{item.sender === 'me' ? 'bubble bubble-me motion-enter delay-2' : 'bubble bubble-other motion-enter delay-1'}}">{{item.content}}</view>

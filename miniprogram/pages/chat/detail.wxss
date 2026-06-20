@@ -8,3 +8,7 @@
 input {
   flex: 1;
 }
+
+.report-btn {
+  margin-top: 14rpx;
+}
