@@ -87,9 +87,16 @@ async function enqueueOfflineMessageNotification(params: {
     if (!settings.pushEnabled || !settings.messagePushEnabled) continue;
     await pool.query(
       `INSERT INTO notification_tasks
-       (user_id, conversation_id, message_id, task_type, channel, title, content, status)
-       VALUES (?, ?, ?, 'new_message', 'wx_subscribe', ?, ?, 'pending')`,
-      [receiverId, params.conversationId, params.messageId, "你收到一条新消息", contentPreview || "点击查看详情"]
+       (user_id, conversation_id, message_id, task_type, channel, title, content, status, retry_count, max_retries)
+       VALUES (?, ?, ?, 'new_message', 'wx_subscribe', ?, ?, 'pending', 0, ?)`,
+      [
+        receiverId,
+        params.conversationId,
+        params.messageId,
+        "你收到一条新消息",
+        contentPreview || "点击查看详情",
+        config.push.maxRetries
+      ]
     );
   }
 }
@@ -187,12 +194,12 @@ router.put("/notifications/settings", requireAuth, requireActiveUser, wrap(async
 router.get("/notifications/tasks", requireAuth, requireActiveUser, wrap(async (req, res) => {
   const status = String(req.query.status || "").trim();
   const limit = Math.min(Math.max(Number(req.query.limit || 50), 1), 200);
-  const statusValues = ["pending", "sent", "failed"];
+  const statusValues = ["pending", "processing", "sent", "failed", "dead"];
   const hasStatusFilter = statusValues.includes(status);
 
   const [rows] = await pool.query<RowDataPacket[]>(
     `SELECT id, user_id, conversation_id, message_id, task_type, channel, title, content,
-            status, error_message, scheduled_at, sent_at, created_at, updated_at
+            status, retry_count, max_retries, error_message, scheduled_at, sent_at, created_at, updated_at
      FROM notification_tasks
      WHERE user_id = ?
        AND (? = 0 OR status = ?)
@@ -212,7 +219,7 @@ router.patch("/notifications/tasks/:id", requireAuth, requireActiveUser, wrap(as
     res.status(400).json({ message: "invalid task id" });
     return;
   }
-  if (!["pending", "sent", "failed"].includes(status)) {
+  if (!["pending", "sent", "failed", "dead"].includes(status)) {
     res.status(400).json({ message: "invalid status" });
     return;
   }

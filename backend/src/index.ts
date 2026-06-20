@@ -3,6 +3,7 @@ import express from "express";
 import helmet from "helmet";
 import morgan from "morgan";
 import { config } from "./config";
+import { startNotificationWorker, stopNotificationWorker } from "./notification-worker";
 import { registerRealtimeGateway } from "./realtime";
 import { router } from "./routes";
 
@@ -34,3 +35,17 @@ const server = app.listen(port, () => {
 });
 
 registerRealtimeGateway(server);
+
+if (config.push.workerEnabled) {
+  startNotificationWorker();
+}
+
+function shutdown(): void {
+  stopNotificationWorker();
+  server.close(() => {
+    process.exit(0);
+  });
+}
+
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);

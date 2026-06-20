@@ -18,6 +18,8 @@ CREATE TABLE IF NOT EXISTS notification_tasks (
   title VARCHAR(64) NOT NULL,
   content VARCHAR(255) NOT NULL,
   status VARCHAR(16) NOT NULL DEFAULT 'pending',
+  retry_count INT NOT NULL DEFAULT 0,
+  max_retries INT NOT NULL DEFAULT 5,
   error_message VARCHAR(255) NULL,
   scheduled_at TIMESTAMP NULL,
   sent_at TIMESTAMP NULL,
