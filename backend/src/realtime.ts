@@ -94,15 +94,11 @@ async function isActiveUser(userId: number): Promise<boolean> {
 
 export async function emitConversationMessage(
   conversationId: number,
-  message: Record<string, unknown>,
-  excludeUserId?: number
+  message: Record<string, unknown>
 ): Promise<void> {
   const participants = await getConversationParticipants(conversationId);
-  const receiverIds = excludeUserId
-    ? participants.filter((userId) => userId !== excludeUserId)
-    : participants;
-  if (receiverIds.length === 0) return;
-  emitToUsers(receiverIds, {
+  if (participants.length === 0) return;
+  emitToUsers(participants, {
     type: "new_message",
     conversationId,
     message
@@ -116,11 +112,17 @@ export async function emitReadReceipt(
 ): Promise<void> {
   const participants = await getConversationParticipants(conversationId);
   const receiverIds = participants.filter((userId) => userId !== readerId);
-  if (receiverIds.length === 0) return;
-  emitToUsers(receiverIds, {
-    type: "read_receipt",
+  if (receiverIds.length > 0) {
+    emitToUsers(receiverIds, {
+      type: "read_receipt",
+      conversationId,
+      readerId,
+      lastReadMessageId
+    });
+  }
+  emitToUsers([readerId], {
+    type: "self_read_sync",
     conversationId,
-    readerId,
     lastReadMessageId
   });
 }
@@ -153,6 +155,11 @@ async function emitDeliveryReceipt(
     type: "delivery_receipt",
     conversationId,
     receiverId,
+    messageId
+  });
+  emitToUsers([receiverId], {
+    type: "self_delivery_sync",
+    conversationId,
     messageId
   });
 }

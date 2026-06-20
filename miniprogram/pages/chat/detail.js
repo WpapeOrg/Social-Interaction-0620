@@ -192,6 +192,12 @@ Page({
         });
       }
 
+      if (payload.type === "self_read_sync" && Number(payload.conversationId) === this.data.conversationId) {
+        this.setData({
+          readTip: `已同步本账号已读状态（#${payload.lastReadMessageId || 0}）`
+        });
+      }
+
       if (payload.type === "typing_status" && Number(payload.conversationId) === this.data.conversationId) {
         const isTyping = Boolean(payload.isTyping);
         this.setData({
@@ -202,6 +208,12 @@ Page({
       if (payload.type === "delivery_receipt" && Number(payload.conversationId) === this.data.conversationId) {
         this.setData({
           deliveryTip: `消息已送达对方（#${payload.messageId || 0}）`
+        });
+      }
+
+      if (payload.type === "self_delivery_sync" && Number(payload.conversationId) === this.data.conversationId) {
+        this.setData({
+          deliveryTip: `已同步本账号送达确认（#${payload.messageId || 0}）`
         });
       }
     });

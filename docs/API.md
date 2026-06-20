@@ -187,4 +187,6 @@
 - `read_receipt`：对方已读回执。
 - `typing_status`：对方输入状态变化。
 - `delivery_receipt`：消息送达回执。
+- `self_read_sync`：同账号其他设备触发的已读状态同步。
+- `self_delivery_sync`：同账号其他设备触发的送达状态同步。
 - `pong`：服务端心跳应答。
