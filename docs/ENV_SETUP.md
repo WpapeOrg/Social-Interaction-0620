@@ -28,6 +28,10 @@ npm -v
 ```bash
 docker compose up -d
 docker compose ps
+
+> ARM Mac（Apple Silicon）用户注意：所有服务已配置 `platform: linux/amd64`，
+> 首次启动会通过 Rosetta 2 模拟运行。若构建缓存导致平台不匹配，
+> 可执行 `docker compose build --no-cache app && docker compose up -d`。
 ```
 
 ## 3. 启动后端服务
@@ -35,7 +39,8 @@ docker compose ps
 ```bash
 cd backend
 npm install
-cp .env.example .env
+# 如 .env 不存在，从模板创建；如已存在则跳过
+test -f .env || cp .env.example .env
 npm run dev
 ```
 
@@ -51,13 +56,15 @@ curl http://localhost:3000/health
 
 实时聊天升级后，需额外执行：
 
+> 密码可在 .env 的 DB_PASSWORD 字段找到。
+
 ```bash
-mysql -h 127.0.0.1 -P 3306 -u social_user -psocial_pass social_interaction < sql/realtime_migration_002.sql
-mysql -h 127.0.0.1 -P 3306 -u social_user -psocial_pass social_interaction < sql/realtime_migration_003.sql
-mysql -h 127.0.0.1 -P 3306 -u social_user -psocial_pass social_interaction < sql/realtime_migration_004.sql
-mysql -h 127.0.0.1 -P 3306 -u social_user -psocial_pass social_interaction < sql/realtime_migration_005.sql
-mysql -h 127.0.0.1 -P 3306 -u social_user -psocial_pass social_interaction < sql/realtime_migration_006.sql
-mysql -h 127.0.0.1 -P 3306 -u social_user -psocial_pass social_interaction < sql/realtime_migration_007.sql
+mysql -h 127.0.0.1 -P 3306 -u social_user -p"mU@oIMau*0h*MA6h#Qn^eZ7h" social_interaction < sql/realtime_migration_002.sql
+mysql -h 127.0.0.1 -P 3306 -u social_user -p"mU@oIMau*0h*MA6h#Qn^eZ7h" social_interaction < sql/realtime_migration_003.sql
+mysql -h 127.0.0.1 -P 3306 -u social_user -p"mU@oIMau*0h*MA6h#Qn^eZ7h" social_interaction < sql/realtime_migration_004.sql
+mysql -h 127.0.0.1 -P 3306 -u social_user -p"mU@oIMau*0h*MA6h#Qn^eZ7h" social_interaction < sql/realtime_migration_005.sql
+mysql -h 127.0.0.1 -P 3306 -u social_user -p"mU@oIMau*0h*MA6h#Qn^eZ7h" social_interaction < sql/realtime_migration_006.sql
+mysql -h 127.0.0.1 -P 3306 -u social_user -p"mU@oIMau*0h*MA6h#Qn^eZ7h" social_interaction < sql/realtime_migration_007.sql
 ```
 
 ## 5. 管理后台联调

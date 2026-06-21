@@ -18,13 +18,38 @@
 推荐本地版本：`Node.js 20 LTS（建议 20.19.x）` + `npm 10.9.2`。  
 已知问题：`npm 11.13.0` 在本项目中可能出现 `Exit handler never called!`。
 
+### 开发环境
 ```bash
+# 第一步：启动 Docker 容器（MySQL + Redis）
 docker compose up -d
+
+> ARM Mac（Apple Silicon）用户注意：所有服务已配置 `platform: linux/amd64`，
+> 首次启动会通过 Rosetta 2 模拟运行。若构建缓存导致平台不匹配，
+> 可执行 `docker compose build --no-cache app && docker compose up -d`。
+
+# 第二步：本地启动后端服务
 cd backend
 npm install
 cp .env.example .env
+# 需要手动修改 .env 中的 ADMIN_API_KEY（默认用 dev_admin_key），否则后台管理界面会 401
 npm run dev
 ```
+
+### 生产部署
+
+**Docker Compose（推荐，含 MySQL + Redis + App）：**
+```bash
+NODE_ENV=production docker compose up -d
+```
+
+**PM2 守护进程：**
+```bash
+cd backend
+npm run build
+NODE_ENV=production pm2 start ecosystem.config.js
+```
+
+生产环境务必设置环境变量 `NODE_ENV=production`，以确保日志格式（`combined`）和错误处理策略正确生效。
 
 数据库初始化与迁移、管理台联调见 [环境搭建文档](docs/ENV_SETUP.md)。
 

@@ -31,3 +31,14 @@
 - **版本维护分支约定**：新增 `feature/version-maintenance` 作为后续 Node/npm/镜像源相关改动的统一迭代分支。
 - **大版本拆分计划**：新增 `docs/RELEASE_VERSIONS.md`，按已实现/未实现能力划分 V1.0~V4.0，并给出对应上线分支命名。
 - **版本号同步**：确认当前最新大版本为 `V1.3`，并将 `backend/package.json` 版本同步为 `1.3.0`。
+
+## 2026-06-21
+
+### Security & DevOps
+- **微信消息推送回调 URL**：已配置 `https://api.wpape.top/wechat/push/callback`，安全模式验证通过。
+- **数据库强密码**：`DB_PASSWORD` 替换为 24 位强密码，同步更新 `.env` / `.env.example` / `docker-compose.yml`。
+- **Docker 化生产部署**：新增 `backend/Dockerfile`、`docker-compose.yml` 新增 `app` 服务、`ecosystem.config.js` PM2 双进程。
+- **生产日志优化**：`morgan` 按 `NODE_ENV` 动态切换 `combined` / `dev`。
+- **Docker 运维文档**：新增 `docs/docker-ops.md`，覆盖容器状态、环境变量查询、日志、启停、项目环境变量说明。
+- **README 开发步骤优化**：拆分 Docker 与本地后端启动步骤，补充 `ADMIN_API_KEY` 配置说明避免 401。
+- **.gitignore 补充**：新增 `temp/` 排除规则。

@@ -14,7 +14,7 @@ app.use(helmet());
 app.use(cors());
 app.use(express.text({ type: ["application/xml", "text/xml"] }));
 app.use(express.json());
-app.use(morgan("dev"));
+app.use(morgan(config.nodeEnv === "production" ? "combined" : "dev"));
 
 app.get("/health", (_req, res) => {
   res.status(200).json({
